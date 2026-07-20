@@ -1,122 +1,130 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 
 const testimonials = [
   {
     quote:
-      "We used to spend hours manually entering receipts. Now we just upload and ask. The Amharic support is a game changer for our team.",
+      "Nexus replaced hours of receipt entry with a conversation. Our finance review is faster, and the whole team can finally find the same answer.",
     name: "Tigist Haile",
     role: "Owner, Addis Print Solutions",
-    avatar: "https://picsum.photos/seed/person1/100/100",
+    initials: "TH",
   },
   {
     quote:
-      "The expense summaries alone save us two days every month. Our accountant loves the automatic categorization. Highly recommended.",
+      "The source links matter. We can move quickly without guessing where an answer came from, and our accountant gets cleaner records every month.",
     name: "Dawit Kebede",
     role: "Finance Manager, Mekelle Trading",
-    avatar: "https://picsum.photos/seed/person2/100/100",
+    initials: "DK",
   },
   {
     quote:
-      "Being able to switch between English and Amharic means everyone on our team can use it. The AI actually understands context across documents.",
+      "English and Amharic in one workspace changed adoption for us. Nexus feels less like another system and more like a teammate who knows our files.",
     name: "Meron Tadesse",
     role: "Operations Lead, Bahir Dar Logistics",
-    avatar: "https://picsum.photos/seed/person3/100/100",
+    initials: "MT",
   },
 ];
 
 export function TestimonialCarousel() {
   const [active, setActive] = useState(0);
-  const count = testimonials.length;
+  const [direction, setDirection] = useState(1);
 
-  const next = useCallback(() => setActive((a) => (a + 1) % count), [count]);
-  const prev = useCallback(
-    () => setActive((a) => (a - 1 + count) % count),
-    [count]
-  );
+  const changeSlide = useCallback((nextIndex: number, nextDirection: number) => {
+    setDirection(nextDirection);
+    setActive((nextIndex + testimonials.length) % testimonials.length);
+  }, []);
+
+  const next = useCallback(() => {
+    setDirection(1);
+    setActive((current) => (current + 1) % testimonials.length);
+  }, []);
 
   useEffect(() => {
-    const t = setInterval(next, 6000);
-    return () => clearInterval(t);
+    const timer = window.setInterval(next, 7000);
+    return () => window.clearInterval(timer);
   }, [next]);
 
-  const t = testimonials[active];
+  const testimonial = testimonials[active];
 
   return (
-    <section id="testimonials" className="bg-black px-6 py-32 md:py-48">
-      <div className="mx-auto max-w-4xl text-center">
-        <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-semibold leading-[1.1] tracking-tight text-white">
-          Trusted by
-          <br />
-          Ethiopian businesses
-        </h2>
+    <section id="customers" className="px-5 py-32 sm:px-8 md:py-48">
+      <div className="mx-auto max-w-7xl">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.35 }}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+          className="overflow-hidden rounded-xl border border-white/9 bg-[#111113]"
+        >
+          <div className="grid min-h-[620px] lg:grid-cols-[0.62fr_1.38fr]">
+            <div className="flex flex-col justify-between border-b border-white/8 p-7 sm:p-10 lg:border-b-0 lg:border-r lg:p-12">
+              <div>
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5EEAD4]">
+                  Built for real operators
+                </p>
+                <h2 className="mt-7 text-4xl font-medium leading-[1] tracking-[-0.04em] text-white sm:text-5xl">
+                  Clarity your team can feel.
+                </h2>
+              </div>
+              <div className="mt-16 flex items-center gap-3">
+                <motion.button
+                  type="button"
+                  onClick={() => changeSlide(active - 1, -1)}
+                  whileHover={{ y: -3, borderColor: "rgba(45,212,191,0.4)", color: "#5EEAD4" }}
+                  whileTap={{ scale: 0.94 }}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-[#A1A1AA]"
+                  aria-label="Previous testimonial"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => changeSlide(active + 1, 1)}
+                  whileHover={{ y: -3, borderColor: "rgba(45,212,191,0.4)", color: "#5EEAD4" }}
+                  whileTap={{ scale: 0.94 }}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-[#A1A1AA]"
+                  aria-label="Next testimonial"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </motion.button>
+                <span className="ml-2 font-mono text-[10px] tracking-[0.16em] text-[#52525B]">
+                  0{active + 1} / 0{testimonials.length}
+                </span>
+              </div>
+            </div>
 
-        <div className="mt-20 transition-all duration-700">
-          <p className="mx-auto max-w-2xl text-xl leading-relaxed text-white/70 sm:text-2xl">
-            &ldquo;{t.quote}&rdquo;
-          </p>
-
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <img
-              src={t.avatar}
-              alt=""
-              className="h-12 w-12 rounded-full object-cover ring-1 ring-white/10"
-              style={{ filter: "grayscale(0.3)" }}
-            />
-            <div className="text-left">
-              <div className="font-medium text-white">{t.name}</div>
-              <div className="text-sm text-white/40">{t.role}</div>
+            <div className="relative flex min-h-[430px] items-center overflow-hidden p-7 sm:p-12 lg:p-16">
+              <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-[#2DD4BF]/8 blur-[100px]" />
+              <AnimatePresence mode="wait" custom={direction}>
+                <motion.figure
+                  key={active}
+                  custom={direction}
+                  initial={{ opacity: 0, x: direction * 46 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: direction * -46 }}
+                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative z-10"
+                >
+                  <blockquote className="max-w-4xl text-balance text-[clamp(1.9rem,3.5vw,3.7rem)] font-medium leading-[1.12] tracking-[-0.035em] text-white">
+                    “{testimonial.quote}”
+                  </blockquote>
+                  <figcaption className="mt-12 flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#2DD4BF]/25 bg-[#2DD4BF]/10 text-sm font-semibold text-[#5EEAD4]">
+                      {testimonial.initials}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">{testimonial.name}</p>
+                      <p className="mt-1 font-mono text-[10px] text-[#71717A]">{testimonial.role}</p>
+                    </div>
+                  </figcaption>
+                </motion.figure>
+              </AnimatePresence>
             </div>
           </div>
-        </div>
-
-        <div className="mt-12 flex items-center justify-center gap-6">
-          <button
-            onClick={prev}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:border-white/30 hover:text-white"
-            aria-label="Previous testimonial"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="15 4 7 12 15 20" />
-            </svg>
-          </button>
-          <div className="flex gap-2">
-            {testimonials.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  i === active ? "w-8 bg-white/60" : "w-4 bg-white/15"
-                }`}
-                aria-label={`Testimonial ${i + 1}`}
-              />
-            ))}
-          </div>
-          <button
-            onClick={next}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:border-white/30 hover:text-white"
-            aria-label="Next testimonial"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="9 4 17 12 9 20" />
-            </svg>
-          </button>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

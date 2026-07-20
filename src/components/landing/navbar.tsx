@@ -1,64 +1,108 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { UserButton, useAuth } from "@clerk/nextjs";
+import { motion } from "motion/react";
 import Link from "next/link";
+
+const navLinks = [
+  { href: "#features", label: "Capabilities" },
+  { href: "#workflow", label: "Workflow" },
+  { href: "#customers", label: "Customers" },
+];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const { isSignedIn } = useAuth();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <nav
-      className={`fixed top-0 inset-x-0 z-50 flex justify-center px-4 pt-4 transition-all duration-500 ${
-        scrolled ? "pt-2" : "pt-6"
-      }`}
+    <motion.nav
+      initial={{ y: -24, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed inset-x-0 top-0 z-50 flex justify-center px-3 sm:px-5"
+      aria-label="Primary navigation"
     >
-      <div
-        className={`flex w-full max-w-5xl items-center justify-between rounded-2xl border border-white/10 px-5 py-2.5 backdrop-blur-xl transition-all duration-500 ${
-          scrolled
-            ? "bg-black/40 shadow-lg shadow-black/20"
-            : "bg-black/20"
-        }`}
+      <motion.div
+        animate={{
+          y: scrolled ? 8 : 20,
+          backgroundColor: scrolled
+            ? "rgba(5, 5, 5, 0.88)"
+            : "rgba(5, 5, 5, 0.54)",
+          borderColor: scrolled
+            ? "rgba(45, 212, 191, 0.2)"
+            : "rgba(255, 255, 255, 0.1)",
+        }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="flex w-full max-w-7xl items-center justify-between rounded-xl border px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:px-5"
       >
-        <Link href="/" className="text-lg font-semibold tracking-tight text-white">
-          AI<span className="text-white/60">Ops</span>
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Nexus home">
+          <motion.span
+            animate={{ opacity: [0.45, 1, 0.45], scale: [0.9, 1, 0.9] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+            className="h-2.5 w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_18px_rgba(45,212,191,0.75)]"
+          />
+          <span className="text-xs font-semibold tracking-[0.16em] text-white sm:text-sm sm:tracking-[0.18em]">
+            NEXUS<span className="text-[#71717A]">/OPS</span>
+          </span>
         </Link>
 
-        <div className="hidden items-center gap-6 text-sm font-medium text-white/70 sm:flex">
-          <a href="#features" className="transition-colors hover:text-white">
-            Features
-          </a>
-          <a href="#how-it-works" className="transition-colors hover:text-white">
-            How It Works
-          </a>
-          <a href="#testimonials" className="transition-colors hover:text-white">
-            Trust
-          </a>
+        <div className="hidden items-center gap-7 lg:flex">
+          {navLinks.map((item) => (
+            <motion.a
+              key={item.href}
+              href={item.href}
+              whileHover={{ y: -2, color: "#FFFFFF" }}
+              transition={{ duration: 0.2 }}
+              className="text-sm text-[#A1A1AA]"
+            >
+              {item.label}
+            </motion.a>
+          ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-white/70 transition-colors hover:text-white"
-          >
-            Log In
-          </Link>
-          <Link href="/signup">
-            <Button
-              size="sm"
-              className="rounded-xl bg-white text-black hover:bg-white/90"
-            >
-              Sign Up
-            </Button>
-          </Link>
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+          {isSignedIn ? (
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonBox: "h-9 w-9 rounded-lg",
+                  userButtonTrigger: "focus:ring-0 focus:shadow-none",
+                },
+              }}
+            />
+          ) : (
+            <>
+              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }}>
+                <Link
+                  href="/sign-in"
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-[#D4D4D8] sm:px-4"
+                >
+                  Log in
+                </Link>
+              </motion.div>
+              <motion.div
+                whileHover={{ y: -2, boxShadow: "0 12px 36px rgba(45,212,191,0.22)" }}
+                whileTap={{ scale: 0.96 }}
+              >
+                <Link
+                  href="/sign-up"
+                  className="block rounded-lg bg-[#2DD4BF] px-3 py-2 text-sm font-semibold text-[#04100E] sm:px-4"
+                >
+                  Start free
+                </Link>
+              </motion.div>
+            </>
+          )}
         </div>
-      </div>
-    </nav>
+      </motion.div>
+    </motion.nav>
   );
 }

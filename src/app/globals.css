@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-outfit);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,82 +49,171 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #050505;
+  --foreground: #FFFFFF;
+  --card: #18181B;
+  --card-foreground: #FFFFFF;
+  --popover: #18181B;
+  --popover-foreground: #FFFFFF;
+  --primary: #2DD4BF;
+  --primary-foreground: #04100E;
+  --secondary: #18181B;
+  --secondary-foreground: #FFFFFF;
+  --muted: #27272A;
+  --muted-foreground: #A1A1AA;
+  --accent: #18181B;
+  --accent-foreground: #FFFFFF;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: #27272A;
+  --input: #27272A;
+  --ring: #2DD4BF;
+  --chart-1: #2DD4BF;
+  --chart-2: #A1A1AA;
+  --chart-3: #52525B;
+  --chart-4: #27272A;
+  --chart-5: #18181B;
+  --radius: 0.5rem;
+  --sidebar: #0A0A0C;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #0A0A0C;
+  --sidebar-accent: #18181B;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #27272A;
+  --sidebar-ring: #FFFFFF;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #050505;
+  --foreground: #FFFFFF;
+  --card: #18181B;
+  --card-foreground: #FFFFFF;
+  --popover: #18181B;
+  --popover-foreground: #FFFFFF;
+  --primary: #2DD4BF;
+  --primary-foreground: #04100E;
+  --secondary: #18181B;
+  --secondary-foreground: #FFFFFF;
+  --muted: #27272A;
+  --muted-foreground: #A1A1AA;
+  --accent: #18181B;
+  --accent-foreground: #FFFFFF;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: #27272A;
+  --input: #27272A;
+  --ring: #2DD4BF;
+  --chart-1: #2DD4BF;
+  --chart-2: #A1A1AA;
+  --chart-3: #52525B;
+  --chart-4: #27272A;
+  --chart-5: #18181B;
+  --sidebar: #0A0A0C;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #0A0A0C;
+  --sidebar-accent: #18181B;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #27272A;
+  --sidebar-ring: #FFFFFF;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .nexus-page {
+    font-family: "Satoshi", var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .nexus-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: linear-gradient(to bottom, black 12%, transparent 82%);
+  }
+}
+
+.cl-modalContent,
+.cl-userProfile-root,
+.cl-pageScrollBox,
+.cl-page {
+  color: #e4e4e7 !important;
+}
+
+.cl-modalContent :where([class*="cl-lineItemsDescription"]),
+.cl-modalContent :where([class*="cl-lineItemsDescription"] *),
+.cl-userProfile-root :where([class*="cl-lineItemsDescription"]),
+.cl-userProfile-root :where([class*="cl-lineItemsDescription"] *),
+.cl-pageScrollBox :where([class*="cl-lineItemsDescription"]),
+.cl-pageScrollBox :where([class*="cl-lineItemsDescription"] *) {
+  color: #e4e4e7 !important;
+}
+
+.cl-modalContent :where([class*="cl-lineItemsDescriptionSuffix"]),
+.cl-userProfile-root :where([class*="cl-lineItemsDescriptionSuffix"]),
+.cl-pageScrollBox :where([class*="cl-lineItemsDescriptionSuffix"]) {
+  color: #a1a1aa !important;
+}
+
+.cl-modalContent :where([class*="cl-profileSectionTitle"], [class*="cl-profileSectionSubtitle"]),
+.cl-userProfile-root :where([class*="cl-profileSectionTitle"], [class*="cl-profileSectionSubtitle"]),
+.cl-pageScrollBox :where([class*="cl-profileSectionTitle"], [class*="cl-profileSectionSubtitle"]) {
+  color: #8b8b96 !important;
+}
+
+.cl-modalContent :where([class*="cl-badge"]),
+.cl-userProfile-root :where([class*="cl-badge"]),
+.cl-pageScrollBox :where([class*="cl-badge"]) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: #18181b !important;
+  color: #d4d4d8 !important;
+}
+
+.cl-modalContent :where([class*="cl-formFieldInput"]),
+.cl-userProfile-root :where([class*="cl-formFieldInput"]),
+.cl-pageScrollBox :where([class*="cl-formFieldInput"]) {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: #0b0b0d !important;
+  color: #f4f4f5 !important;
+}
+
+.cl-modalContent :where([class*="cl-formButtonPrimary"]),
+.cl-userProfile-root :where([class*="cl-formButtonPrimary"]),
+.cl-pageScrollBox :where([class*="cl-formButtonPrimary"]) {
+  background: #2dd4bf !important;
+  color: #04100e !important;
+}
+
+.cl-modalContent :where([class*="cl-avatarImageActionsUpload"], [class*="cl-profileSectionPrimaryButton"], [class*="cl-formFieldAction"]),
+.cl-userProfile-root :where([class*="cl-avatarImageActionsUpload"], [class*="cl-profileSectionPrimaryButton"], [class*="cl-formFieldAction"]),
+.cl-pageScrollBox :where([class*="cl-avatarImageActionsUpload"], [class*="cl-profileSectionPrimaryButton"], [class*="cl-formFieldAction"]) {
+  color: #5eead4 !important;
+}
+
+.cl-modalContent :where([class*="cl-avatarImageActionsRemove"]),
+.cl-userProfile-root :where([class*="cl-avatarImageActionsRemove"]),
+.cl-pageScrollBox :where([class*="cl-avatarImageActionsRemove"]) {
+  color: #f87171 !important;
+}
+
+::selection {
+  background: rgba(45, 212, 191, 0.28);
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }

@@ -1,122 +1,238 @@
 "use client";
 
 import { useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "motion/react";
+import { ChartLineUp, DownloadSimple, Robot } from "@phosphor-icons/react";
 
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
-
-const steps = [
+const story = [
   {
-    number: "01",
-    title: "Upload your documents",
+    title: "Capture the messy reality.",
     description:
-      "Drag invoices, receipts, or PDFs onto the dashboard. Our OCR engine processes scanned documents and handwritten notes with high accuracy.",
-    image: "https://picsum.photos/seed/upload-step/800/500",
+      "Receipts from phones, multi-page invoices, supplier PDFs, and operational spreadsheets all enter one reliable workspace.",
+    outcome: "Clean, searchable records",
+    icon: DownloadSimple,
+    visual: "capture",
   },
   {
-    number: "02",
-    title: "Ask anything",
+    title: "Ask with full context.",
     description:
-      "Type questions in English or Amharic. The AI understands context across all your uploaded documents and delivers precise answers in seconds.",
-    image: "https://picsum.photos/seed/chat-step/800/500",
+      "Nexus reasons across your selected documents, understands English and Amharic, and points every answer back to the evidence.",
+    outcome: "Answers your team can trust",
+    icon: Robot,
+    visual: "understand",
   },
   {
-    number: "03",
-    title: "Get insights, not just data",
+    title: "Act before the month ends.",
     description:
-      "Automatic expense summaries, vendor breakdowns, and spending trends. Export reports your accountant will actually understand.",
-    image: "https://picsum.photos/seed/insights-step/800/500",
+      "See changing supplier costs, repeated expenses, and reporting-ready summaries while there is still time to respond.",
+    outcome: "Faster operational decisions",
+    icon: ChartLineUp,
+    visual: "act",
   },
 ];
 
-export function ScrollShowcase() {
-  const containerRef = useRef<HTMLElement>(null);
-  const imagesRef = useRef<(HTMLDivElement | null)[]>([]);
+const statement =
+  "Your documents already contain the story of your business. Nexus makes that story searchable, explainable, and ready to act on.";
 
-  useGSAP(
-    () => {
-      if (!containerRef.current) return;
-
-      const sections = gsap.utils.toArray<HTMLElement>(
-        containerRef.current!.querySelectorAll(".scale-fade-card")
-      );
-
-      sections.forEach((el) => {
-        gsap.fromTo(
-          el,
-          { scale: 0.85, opacity: 0.3, filter: "brightness(0.5)" },
-          {
-            scale: 1,
-            opacity: 1,
-            filter: "brightness(1)",
-            duration: 1.2,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 85%",
-              end: "top 30%",
-              scrub: 1.2,
-            },
-          }
-        );
-      });
-    },
-    { scope: containerRef }
+function ScrubbedWord({
+  word,
+  index,
+  total,
+  progress,
+}: {
+  word: string;
+  index: number;
+  total: number;
+  progress: MotionValue<number>;
+}) {
+  const start = index / total;
+  const opacity = useTransform(progress, [start, Math.min(start + 0.16, 1)], [0.12, 1]);
+  return (
+    <motion.span style={{ opacity }} className="mr-[0.24em] inline-block">
+      {word}
+    </motion.span>
   );
+}
+
+function CaptureVisual() {
+  return (
+    <div className="grid h-full grid-cols-2 gap-2 p-4 sm:p-6">
+      {["INVOICE", "RECEIPT", "CONTRACT", "LEDGER"].map((label, index) => (
+        <motion.div
+          key={label}
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: index * 0.08, duration: 0.45 }}
+          whileHover={{ y: -5, borderColor: "rgba(45,212,191,0.3)" }}
+          className="flex min-h-28 flex-col justify-between rounded-lg border border-white/8 bg-[#0B0B0D] p-4"
+        >
+          <span className="font-mono text-[9px] tracking-[0.16em] text-[#71717A]">{label}</span>
+          <div className="space-y-1.5">
+            <span className="block h-1 w-full rounded-full bg-white/10" />
+            <span className="block h-1 w-2/3 rounded-full bg-white/10" />
+            <span className="block h-1 w-4/5 rounded-full bg-[#2DD4BF]/35" />
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function UnderstandVisual() {
+  return (
+    <div className="flex h-full flex-col justify-center gap-3 p-5 sm:p-8">
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        className="ml-auto max-w-[82%] rounded-lg rounded-br-sm bg-white p-3 text-xs leading-5 text-[#09090B]"
+      >
+        Compare fuel expenses across our last three months.
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.16 }}
+        className="max-w-[90%] rounded-lg rounded-bl-sm border border-[#2DD4BF]/20 bg-[#0C1715] p-4 text-xs leading-5 text-[#D4D4D8]"
+      >
+        Fuel spend decreased 7.2% in June. The largest change came from fewer
+        deliveries on the northern route.
+        <div className="mt-3 flex gap-2 font-mono text-[8px] uppercase tracking-[0.12em] text-[#5EEAD4]">
+          <span>3 sources</span>
+          <span>High confidence</span>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function ActVisual() {
+  const points = "0,70 36,62 72,68 108,45 144,52 180,31 216,38 252,16 288,24 324,7";
+  return (
+    <div className="flex h-full flex-col justify-between p-5 sm:p-8">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#71717A]">Monthly variance</p>
+          <p className="mt-2 text-3xl font-medium tracking-[-0.04em] text-white">−7.2%</p>
+        </div>
+        <span className="rounded-md bg-[#2DD4BF]/10 px-2.5 py-1 font-mono text-[9px] text-[#5EEAD4]">ON TRACK</span>
+      </div>
+      <svg viewBox="0 0 324 80" className="mt-8 w-full overflow-visible" aria-hidden="true">
+        <motion.polyline
+          points={points}
+          fill="none"
+          stroke="#2DD4BF"
+          strokeWidth="2"
+          initial={{ pathLength: 0, opacity: 0 }}
+          whileInView={{ pathLength: 1, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </svg>
+      <div className="mt-8 grid grid-cols-3 gap-2">
+        {["6 flags", "24 vendors", "3 actions"].map((metric) => (
+          <div key={metric} className="rounded-md border border-white/8 bg-[#0B0B0D] p-3 text-center text-[10px] text-[#A1A1AA]">
+            {metric}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StoryCard({ entry, index }: { entry: (typeof story)[number]; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 88%", "end 30%"] });
+  const scale = useTransform(scrollYProgress, [0, 0.45, 1], [0.9, 1, 0.985]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 1], [0.25, 1, 0.72]);
+  const Icon = entry.icon;
 
   return (
-    <section
-      id="how-it-works"
-      ref={containerRef}
-      className="bg-black px-6 py-32 md:py-48"
+    <motion.article
+      ref={ref}
+      style={{ scale, opacity, top: 112 + index * 18 }}
+      className="sticky mb-10 overflow-hidden rounded-xl border border-white/10 bg-[#111113] shadow-[0_32px_90px_rgba(0,0,0,0.42)]"
     >
-      <div className="mx-auto max-w-6xl">
-        <div className="grid items-start gap-16 lg:grid-cols-2 lg:gap-24">
-          <div className="lg:sticky lg:top-32">
-            <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-semibold leading-[1.1] tracking-tight text-white">
-              How it
-              <br />
-              works
-            </h2>
-            <p className="mt-4 max-w-sm text-lg text-white/50">
-              Three steps from document chaos to complete clarity.
-            </p>
+      <div className="grid min-h-[560px] lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="flex flex-col justify-between border-b border-white/8 p-7 sm:p-10 lg:border-b-0 lg:border-r">
+          <div className="flex items-center justify-between">
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#2DD4BF]/10 text-[#5EEAD4]">
+              <Icon className="h-5 w-5" />
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.18em] text-[#52525B]">0{index + 1}</span>
           </div>
+          <div className="mt-16 lg:mt-24">
+            <h3 className="max-w-md text-3xl font-medium leading-[1.03] tracking-[-0.035em] text-white sm:text-4xl">
+              {entry.title}
+            </h3>
+            <p className="mt-5 max-w-md text-sm leading-6 text-[#A1A1AA]">{entry.description}</p>
+            <div className="mt-8 flex items-center gap-3 border-t border-white/8 pt-5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2DD4BF]" />
+              <span className="text-xs font-medium text-[#D4D4D8]">{entry.outcome}</span>
+            </div>
+          </div>
+        </div>
+        <div className="min-h-[330px] bg-[radial-gradient(circle_at_50%_40%,rgba(45,212,191,0.09),transparent_55%)]">
+          {entry.visual === "capture" && <CaptureVisual />}
+          {entry.visual === "understand" && <UnderstandVisual />}
+          {entry.visual === "act" && <ActVisual />}
+        </div>
+      </div>
+    </motion.article>
+  );
+}
 
-          <div className="flex flex-col gap-32">
-            {steps.map((step, i) => (
-              <div
-                key={step.number}
-                ref={(el) => { imagesRef.current[i] = el; }}
-                className="scale-fade-card"
-              >
-                <div className="mb-4 text-sm font-medium tracking-widest text-white/25">
-                  {step.number}
-                </div>
-                <h3 className="text-2xl font-semibold tracking-tight text-white">
-                  {step.title}
-                </h3>
-                <p className="mt-3 max-w-md leading-relaxed text-white/50">
-                  {step.description}
-                </p>
-                <div className="mt-8 overflow-hidden rounded-2xl border border-white/5">
-                  <img
-                    src={step.image}
-                    alt=""
-                    className="w-full object-cover"
-                    style={{
-                      filter: "grayscale(0.3) contrast(1.15)",
-                      aspectRatio: "16/8",
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+export function ScrollShowcase() {
+  const statementRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: statementRef,
+    offset: ["start 82%", "end 28%"],
+  });
+  const words = statement.split(" ");
+
+  return (
+    <section id="workflow" className="px-5 py-32 sm:px-8 md:py-48">
+      <div ref={statementRef} className="mx-auto max-w-7xl py-12 md:py-24">
+        <p className="max-w-6xl text-balance text-[clamp(2.35rem,5vw,5.4rem)] font-medium leading-[1.05] tracking-[-0.045em] text-white">
+          {words.map((word, index) => (
+            <ScrubbedWord
+              key={`${word}-${index}`}
+              word={word}
+              index={index}
+              total={words.length}
+              progress={scrollYProgress}
+            />
+          ))}
+        </p>
+      </div>
+
+      <div className="mx-auto mt-32 max-w-7xl md:mt-48">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.7 }}
+          className="mb-16 flex flex-col justify-between gap-6 md:flex-row md:items-end"
+        >
+          <h2 className="max-w-3xl text-balance text-[clamp(2.5rem,5vw,5rem)] font-medium leading-[0.98] tracking-[-0.045em] text-white">
+            From scattered files to forward motion.
+          </h2>
+          <p className="max-w-xs text-sm leading-6 text-[#71717A]">
+            Three connected moments. One dependable source of truth.
+          </p>
+        </motion.div>
+
+        <div className="relative pb-24">
+          {story.map((entry, index) => (
+            <StoryCard key={entry.title} entry={entry} index={index} />
+          ))}
         </div>
       </div>
     </section>
