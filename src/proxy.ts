@@ -1,20 +1,9 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/api/webhooks/clerk",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-]);
-
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect();
-  }
-
-  return updateSession(request);
-});
+// Authentication and authorization belong beside each protected resource.
+// Proxy only keeps Supabase cookies fresh and initializes Clerk request state.
+export default clerkMiddleware(async (_auth, request) => updateSession(request));
 
 export const config = {
   matcher: [

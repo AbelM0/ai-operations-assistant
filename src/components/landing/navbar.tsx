@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { UserButton, useAuth } from "@clerk/nextjs";
+import { ArrowRight } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import Link from "next/link";
 
@@ -70,14 +71,23 @@ export function Navbar() {
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           {isSignedIn ? (
-            <UserButton
-              appearance={{
-                elements: {
-                  userButtonBox: "h-9 w-9 rounded-lg",
-                  userButtonTrigger: "focus:ring-0 focus:shadow-none",
-                },
-              }}
-            />
+            <>
+              <Link
+                href="/workspace"
+                className="hidden items-center gap-2 rounded-lg bg-[#2DD4BF] px-4 py-2 text-sm font-semibold text-[#04100E] transition-colors hover:bg-[#5EEAD4] sm:flex"
+              >
+                Open workspace
+                <ArrowRight className="h-4 w-4" weight="bold" />
+              </Link>
+              <UserButton
+                appearance={{
+                  elements: {
+                    userButtonBox: "h-9 w-9 rounded-lg",
+                    userButtonTrigger: "focus:ring-0 focus:shadow-none",
+                  },
+                }}
+              />
+            </>
           ) : (
             <>
               <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }}>

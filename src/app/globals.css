@@ -142,69 +142,14 @@
     background-size: 72px 72px;
     mask-image: linear-gradient(to bottom, black 12%, transparent 82%);
   }
-}
 
-.cl-modalContent,
-.cl-userProfile-root,
-.cl-pageScrollBox,
-.cl-page {
-  color: #e4e4e7 !important;
-}
-
-.cl-modalContent :where([class*="cl-lineItemsDescription"]),
-.cl-modalContent :where([class*="cl-lineItemsDescription"] *),
-.cl-userProfile-root :where([class*="cl-lineItemsDescription"]),
-.cl-userProfile-root :where([class*="cl-lineItemsDescription"] *),
-.cl-pageScrollBox :where([class*="cl-lineItemsDescription"]),
-.cl-pageScrollBox :where([class*="cl-lineItemsDescription"] *) {
-  color: #e4e4e7 !important;
-}
-
-.cl-modalContent :where([class*="cl-lineItemsDescriptionSuffix"]),
-.cl-userProfile-root :where([class*="cl-lineItemsDescriptionSuffix"]),
-.cl-pageScrollBox :where([class*="cl-lineItemsDescriptionSuffix"]) {
-  color: #a1a1aa !important;
-}
-
-.cl-modalContent :where([class*="cl-profileSectionTitle"], [class*="cl-profileSectionSubtitle"]),
-.cl-userProfile-root :where([class*="cl-profileSectionTitle"], [class*="cl-profileSectionSubtitle"]),
-.cl-pageScrollBox :where([class*="cl-profileSectionTitle"], [class*="cl-profileSectionSubtitle"]) {
-  color: #8b8b96 !important;
-}
-
-.cl-modalContent :where([class*="cl-badge"]),
-.cl-userProfile-root :where([class*="cl-badge"]),
-.cl-pageScrollBox :where([class*="cl-badge"]) {
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  background: #18181b !important;
-  color: #d4d4d8 !important;
-}
-
-.cl-modalContent :where([class*="cl-formFieldInput"]),
-.cl-userProfile-root :where([class*="cl-formFieldInput"]),
-.cl-pageScrollBox :where([class*="cl-formFieldInput"]) {
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  background: #0b0b0d !important;
-  color: #f4f4f5 !important;
-}
-
-.cl-modalContent :where([class*="cl-formButtonPrimary"]),
-.cl-userProfile-root :where([class*="cl-formButtonPrimary"]),
-.cl-pageScrollBox :where([class*="cl-formButtonPrimary"]) {
-  background: #2dd4bf !important;
-  color: #04100e !important;
-}
-
-.cl-modalContent :where([class*="cl-avatarImageActionsUpload"], [class*="cl-profileSectionPrimaryButton"], [class*="cl-formFieldAction"]),
-.cl-userProfile-root :where([class*="cl-avatarImageActionsUpload"], [class*="cl-profileSectionPrimaryButton"], [class*="cl-formFieldAction"]),
-.cl-pageScrollBox :where([class*="cl-avatarImageActionsUpload"], [class*="cl-profileSectionPrimaryButton"], [class*="cl-formFieldAction"]) {
-  color: #5eead4 !important;
-}
-
-.cl-modalContent :where([class*="cl-avatarImageActionsRemove"]),
-.cl-userProfile-root :where([class*="cl-avatarImageActionsRemove"]),
-.cl-pageScrollBox :where([class*="cl-avatarImageActionsRemove"]) {
-  color: #f87171 !important;
+  .nexus-workspace-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 88px 88px;
+    mask-image: radial-gradient(circle at 72% 18%, black, transparent 68%);
+  }
 }
 
 ::selection {

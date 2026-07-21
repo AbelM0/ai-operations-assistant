@@ -3,6 +3,7 @@
 import { motion, type Variants } from "motion/react";
 import { ArrowRight, FileText, MagnifyingGlass, Sparkle } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -20,6 +21,8 @@ const documents = [
 ];
 
 export function Hero() {
+  const { isSignedIn } = useAuth();
+
   return (
     <section className="relative isolate flex min-h-[980px] items-center overflow-hidden px-5 pb-28 pt-40 sm:px-8 lg:min-h-[1060px] lg:pb-40 lg:pt-48">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(45,212,191,0.14),transparent_31%),radial-gradient(circle_at_84%_56%,rgba(45,212,191,0.08),transparent_28%)]" />
@@ -87,10 +90,10 @@ export function Hero() {
             className="w-full sm:w-auto"
           >
             <Link
-              href="/sign-up"
+              href={isSignedIn ? "/workspace" : "/sign-up"}
               className="flex h-13 w-full items-center justify-center gap-2 rounded-lg bg-[#2DD4BF] px-7 text-sm font-semibold text-[#04100E] sm:w-auto"
             >
-              Create your workspace
+              {isSignedIn ? "Open your workspace" : "Create your workspace"}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </motion.div>
