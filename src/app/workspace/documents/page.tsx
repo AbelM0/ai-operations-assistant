@@ -1,29 +1,27 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { WorkspaceShell } from "@/components/workspace/workspace-shell";
+import { DocumentsShell } from "@/components/workspace/documents-shell";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { WorkspaceDocument } from "@/lib/documents/types";
 
 export const metadata: Metadata = {
-  title: "Workspace | NexusOps",
-  description: "Upload and organize invoices, receipts, and business documents in your private NexusOps workspace.",
+  title: "Documents | NexusOps",
+  description: "View, upload, and download documents in your private NexusOps workspace.",
 };
 
-export default async function WorkspacePage() {
+export default async function DocumentsPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in?redirect_url=/workspace");
+    redirect("/sign-in?redirect_url=/workspace/documents");
   }
 
-  const user = await currentUser();
-  const firstName = user?.firstName || user?.username || "there";
   const appUser = await requireAppUser();
 
   if (!appUser) {
-    redirect("/sign-in?redirect_url=/workspace");
+    redirect("/sign-in?redirect_url=/workspace/documents");
   }
 
   const { data, error } = await supabaseAdmin
@@ -36,5 +34,5 @@ export default async function WorkspacePage() {
     throw new Error("Could not load workspace documents.", { cause: error });
   }
 
-  return <WorkspaceShell firstName={firstName} initialDocuments={(data ?? []) as WorkspaceDocument[]} />;
+  return <DocumentsShell initialDocuments={(data ?? []) as WorkspaceDocument[]} />;
 }
