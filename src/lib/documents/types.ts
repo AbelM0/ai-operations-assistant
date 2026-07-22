@@ -4,5 +4,6 @@ export type WorkspaceDocument = {
   mimeType: string;
   sizeBytes: number;
   status: string;
+  errorMessage?: string | null;
   createdAt: string;
 };

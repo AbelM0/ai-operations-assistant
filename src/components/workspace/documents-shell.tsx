@@ -11,15 +11,20 @@ import {
   MagnifyingGlass,
   Plus,
   SidebarSimple,
+  SpinnerGap,
+  Trash,
+  WarningCircle,
   X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { DocumentUpload } from "./document-upload";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -47,9 +52,87 @@ function fileType(document: WorkspaceDocument) {
 
 export function DocumentsShell({ initialDocuments }: { initialDocuments: WorkspaceDocument[] }) {
   const [documents, setDocuments] = useState(initialDocuments);
+  const [queuedDocumentIds, setQueuedDocumentIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const statusesRef = useRef(
+    new Map(initialDocuments.map((document) => [document.id, document.status])),
+  );
   const [query, setQuery] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<WorkspaceDocument | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const hasProcessingDocuments = documents.some(
+    (document) =>
+      ["OCR_PROCESSING", "OCR_COMPLETED", "CHUNKING", "EMBEDDING"].includes(
+        document.status,
+      ) || queuedDocumentIds.has(document.id),
+  );
+
+  useEffect(() => {
+    if (!hasProcessingDocuments) return;
+
+    let cancelled = false;
+
+    const refreshDocuments = async () => {
+      try {
+        const response = await fetch("/api/documents", { cache: "no-store" });
+
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as { documents?: WorkspaceDocument[] };
+
+        if (!cancelled && payload.documents) {
+          const completedDocumentIds: string[] = [];
+
+          for (const document of payload.documents) {
+            const previousStatus = statusesRef.current.get(document.id);
+
+            if (["READY", "FAILED"].includes(document.status)) {
+              completedDocumentIds.push(document.id);
+            }
+
+            if (previousStatus && previousStatus !== document.status) {
+              if (document.status === "READY") {
+                toast.success("Document ready", {
+                  description: `${document.originalName} is indexed and ready to search.`,
+                });
+              } else if (document.status === "FAILED") {
+                toast.error("Document processing failed", {
+                  description:
+                    document.errorMessage ||
+                    `${document.originalName} could not be processed.`,
+                });
+              }
+            }
+          }
+
+          statusesRef.current = new Map(
+            payload.documents.map((document) => [document.id, document.status]),
+          );
+          if (completedDocumentIds.length > 0) {
+            setQueuedDocumentIds((current) => {
+              const next = new Set(current);
+              completedDocumentIds.forEach((documentId) => next.delete(documentId));
+              return next;
+            });
+          }
+          setDocuments(payload.documents);
+        }
+      } catch {
+        // Keep the current table state and retry on the next interval.
+      }
+    };
+
+    const interval = window.setInterval(refreshDocuments, 2500);
+    void refreshDocuments();
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [hasProcessingDocuments]);
 
   const filteredDocuments = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -58,8 +141,53 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
   }, [documents, query]);
 
   const handleUploaded = (document: WorkspaceDocument) => {
+    setQueuedDocumentIds((current) => new Set(current).add(document.id));
+    statusesRef.current.set(document.id, document.status);
     setDocuments((current) => [document, ...current]);
     setUploadDialogOpen(false);
+  };
+
+  const deleteDocument = async () => {
+    if (!documentToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/documents/${documentToDelete.id}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        toast.error("Document not deleted", {
+          description: payload.error || "The document could not be deleted. Please try again.",
+        });
+        return;
+      }
+
+      const deletedDocument = documentToDelete;
+      statusesRef.current.delete(deletedDocument.id);
+      setQueuedDocumentIds((current) => {
+        const next = new Set(current);
+        next.delete(deletedDocument.id);
+        return next;
+      });
+      setDocuments((current) =>
+        current.filter((document) => document.id !== deletedDocument.id),
+      );
+      setDocumentToDelete(null);
+      toast.success("Document deleted", {
+        description: `${deletedDocument.originalName} and its processed data were removed.`,
+      });
+    } catch {
+      toast.error("Document not deleted", {
+        description: "The connection was interrupted. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -160,7 +288,7 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
                           <td className="px-4 py-4 text-xs text-[#A1A1AA]">{fileType(document)}</td>
                           <td className="px-4 py-4 text-xs text-[#A1A1AA]">{formatBytes(document.sizeBytes)}</td>
                           <td className="px-4 py-4 text-xs text-[#A1A1AA]">{formatDate(document.createdAt)}</td>
-                          <td className="px-4 py-4"><DocumentStatus status={document.status} /></td>
+                          <td className="px-4 py-4"><DocumentStatus status={document.status} errorMessage={document.errorMessage} /></td>
                           <td className="px-7 py-4">
                             <div className="flex items-center justify-end gap-2">
                               <a href={`/api/documents/${document.id}/file`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white">
@@ -171,6 +299,14 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
                                 <DownloadSimple className="h-3.5 w-3.5" />
                                 Download
                               </a>
+                              <button
+                                type="button"
+                                onClick={() => setDocumentToDelete(document)}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-400/15 px-3 text-xs font-medium text-red-300 transition-colors hover:border-red-400/35 hover:bg-red-400/8 hover:text-red-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
+                              >
+                                <Trash className="h-3.5 w-3.5" />
+                                Delete
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -199,6 +335,59 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
           <DocumentUpload showHeader={false} onUploaded={handleUploaded} />
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={Boolean(documentToDelete)}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDocumentToDelete(null);
+        }}
+      >
+        <DialogContent
+          showCloseButton={!isDeleting}
+          className="border border-red-400/15 bg-[#0B0B0D] p-0 text-white shadow-[0_32px_120px_rgba(0,0,0,0.8)] sm:max-w-md"
+        >
+          <div className="p-6 sm:p-7">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/8 text-red-300">
+              <WarningCircle className="h-5 w-5" weight="fill" />
+            </div>
+            <DialogHeader className="mt-5 pr-8 text-left">
+              <DialogTitle className="text-xl font-semibold tracking-[-0.025em] text-white">
+                Delete this document?
+              </DialogTitle>
+              <DialogDescription className="mt-1 leading-6 text-[#A1A1AA]">
+                <span className="font-medium text-[#E4E4E7]">
+                  {documentToDelete?.originalName}
+                </span>{" "}
+                will be permanently removed with its stored file, extracted text, chunks,
+                embeddings, and related processing records. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <DialogFooter className="m-0 border-t border-white/8 bg-[#08080A] px-6 py-4 sm:px-7">
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={() => setDocumentToDelete(null)}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-white/10 px-4 text-sm font-medium text-[#D4D4D8] transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={deleteDocument}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-400 disabled:cursor-wait disabled:opacity-70"
+            >
+              {isDeleting ? (
+                <SpinnerGap className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+              ) : (
+                <Trash className="h-4 w-4" weight="bold" />
+              )}
+              {isDeleting ? "Deleting…" : "Delete permanently"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
@@ -218,11 +407,17 @@ function EmptyDocuments({ onUploaded }: { onUploaded: (document: WorkspaceDocume
   );
 }
 
-function DocumentStatus({ status }: { status: string }) {
+function DocumentStatus({
+  status,
+  errorMessage,
+}: {
+  status: string;
+  errorMessage?: string | null;
+}) {
   const isReady = status === "READY";
   const isFailed = status === "FAILED";
   return (
-    <span className={`inline-flex rounded-md border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] ${isReady ? "border-[#2DD4BF]/25 bg-[#2DD4BF]/8 text-[#5EEAD4]" : isFailed ? "border-red-400/20 bg-red-400/8 text-red-300" : "border-white/10 bg-white/5 text-[#A1A1AA]"}`}>
+    <span title={isFailed ? errorMessage || "Processing failed" : undefined} className={`inline-flex rounded-md border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] ${isReady ? "border-[#2DD4BF]/25 bg-[#2DD4BF]/8 text-[#5EEAD4]" : isFailed ? "border-red-400/20 bg-red-400/8 text-red-300" : "border-white/10 bg-white/5 text-[#A1A1AA]"}`}>
       {status.replaceAll("_", " ").toLowerCase()}
     </span>
   );

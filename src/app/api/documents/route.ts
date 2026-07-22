@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
@@ -19,6 +20,34 @@ function safeFileName(name: string) {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 120) || "document";
+}
+
+export async function GET() {
+  let appUser;
+
+  try {
+    appUser = await requireAppUser();
+  } catch (error) {
+    console.error("Could not resolve the application user", error);
+    return NextResponse.json({ error: "Could not load your documents." }, { status: 500 });
+  }
+
+  if (!appUser) {
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+
+  const { data: documents, error } = await supabaseAdmin
+    .from("documents")
+    .select("id, originalName, mimeType, sizeBytes, status, errorMessage, createdAt")
+    .eq("userId", appUser.id)
+    .order("createdAt", { ascending: false });
+
+  if (error) {
+    console.error("Could not refresh workspace documents", error);
+    return NextResponse.json({ error: "Could not load your documents." }, { status: 500 });
+  }
+
+  return NextResponse.json({ documents }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request) {
@@ -77,7 +106,7 @@ export async function POST(request: Request) {
       sizeBytes: file.size,
       status: "UPLOADED",
     })
-    .select("id, originalName, mimeType, sizeBytes, status, createdAt")
+    .select("id, originalName, mimeType, sizeBytes, status, errorMessage, createdAt")
     .single();
 
   if (insertError) {
@@ -85,6 +114,11 @@ export async function POST(request: Request) {
     console.error("Document metadata insert failed", insertError);
     return NextResponse.json({ error: "The document record could not be created." }, { status: 500 });
   }
+
+  after(async () => {
+    const { processDocument } = await import("@/lib/documents/process-document");
+    await processDocument(document.id as string);
+  });
 
   return NextResponse.json({ document }, { status: 201 });
 }

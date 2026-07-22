@@ -26,7 +26,7 @@ export default async function DocumentsPage() {
 
   const { data, error } = await supabaseAdmin
     .from("documents")
-    .select("id, originalName, mimeType, sizeBytes, status, createdAt")
+    .select("id, originalName, mimeType, sizeBytes, status, errorMessage, createdAt")
     .eq("userId", appUser.id)
     .order("createdAt", { ascending: false });
 

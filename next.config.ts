@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: [
+    "@huggingface/transformers",
+    "@napi-rs/canvas",
+    "sharp",
+    "tesseract.js",
+    "unpdf",
+  ],
 };
 
 export default nextConfig;
