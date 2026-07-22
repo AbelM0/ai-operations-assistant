@@ -2,6 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import {
+  ArrowClockwise,
   ArrowSquareOut,
   ChatCenteredDots,
   DownloadSimple,
@@ -63,6 +64,7 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<WorkspaceDocument | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [retryingDocumentId, setRetryingDocumentId] = useState<string | null>(null);
   const hasProcessingDocuments = documents.some(
     (document) =>
       ["OCR_PROCESSING", "OCR_COMPLETED", "CHUNKING", "EMBEDDING"].includes(
@@ -145,6 +147,47 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
     statusesRef.current.set(document.id, document.status);
     setDocuments((current) => [document, ...current]);
     setUploadDialogOpen(false);
+  };
+
+  const retryDocument = async (document: WorkspaceDocument) => {
+    if (retryingDocumentId) return;
+
+    setRetryingDocumentId(document.id);
+
+    try {
+      const response = await fetch(`/api/documents/${document.id}`, {
+        method: "POST",
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        toast.error("Processing not restarted", {
+          description: payload.error || "The document could not be queued. Please try again.",
+        });
+        return;
+      }
+
+      statusesRef.current.set(document.id, "UPLOADED");
+      setQueuedDocumentIds((current) => new Set(current).add(document.id));
+      setDocuments((current) =>
+        current.map((item) =>
+          item.id === document.id
+            ? { ...item, errorMessage: null, status: "UPLOADED" }
+            : item,
+        ),
+      );
+      toast.success("Processing restarted", {
+        description: `${document.originalName} has been queued for another attempt.`,
+      });
+    } catch {
+      toast.error("Processing not restarted", {
+        description: "The connection was interrupted. Please try again.",
+      });
+    } finally {
+      setRetryingDocumentId(null);
+    }
   };
 
   const deleteDocument = async () => {
@@ -291,6 +334,21 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
                           <td className="px-4 py-4"><DocumentStatus status={document.status} errorMessage={document.errorMessage} /></td>
                           <td className="px-7 py-4">
                             <div className="flex items-center justify-end gap-2">
+                              {document.status === "FAILED" ? (
+                                <button
+                                  type="button"
+                                  disabled={retryingDocumentId === document.id}
+                                  onClick={() => retryDocument(document)}
+                                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2DD4BF]/20 px-3 text-xs font-medium text-[#5EEAD4] transition-colors hover:border-[#2DD4BF]/40 hover:bg-[#2DD4BF]/8 disabled:cursor-wait disabled:opacity-60"
+                                >
+                                  {retryingDocumentId === document.id ? (
+                                    <SpinnerGap className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                                  ) : (
+                                    <ArrowClockwise className="h-3.5 w-3.5" />
+                                  )}
+                                  Retry
+                                </button>
+                              ) : null}
                               <a href={`/api/documents/${document.id}/file`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white">
                                 <ArrowSquareOut className="h-3.5 w-3.5" />
                                 View

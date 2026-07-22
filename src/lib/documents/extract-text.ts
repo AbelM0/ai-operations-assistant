@@ -5,6 +5,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { createWorker, type Worker } from "tesseract.js";
 import {
+  definePDFJSModule,
   extractText as extractPdfText,
   getDocumentProxy,
   renderPageAsImage,
@@ -17,6 +18,15 @@ export type ExtractedDocument = {
   parserUsed: string;
   ocrEngine: string | null;
 };
+
+let pdfJsModulePromise: Promise<void> | undefined;
+
+function configurePdfJsForNode() {
+  pdfJsModulePromise ??= definePDFJSModule(
+    () => import("pdfjs-dist/legacy/build/pdf.mjs"),
+  );
+  return pdfJsModulePromise;
+}
 
 function normalizeText(value: string) {
   return value
@@ -47,6 +57,7 @@ async function recognizeImage(worker: Worker, image: Buffer | ArrayBuffer) {
 }
 
 async function extractPdf(file: ArrayBuffer): Promise<ExtractedDocument> {
+  await configurePdfJsForNode();
   const pdf = await getDocumentProxy(new Uint8Array(file));
   let worker: Worker | undefined;
 
@@ -60,7 +71,10 @@ async function extractPdf(file: ArrayBuffer): Promise<ExtractedDocument> {
 
       if (pageText.length < 20) {
         worker ??= await createOcrWorker();
-        const renderedPage = await renderPageAsImage(pdf, index + 1, { scale: 2 });
+        const renderedPage = await renderPageAsImage(pdf, index + 1, {
+          canvasImport: () => import("@napi-rs/canvas"),
+          scale: 2,
+        });
         pageText = await recognizeImage(worker, renderedPage);
         usedOcr = true;
       }
