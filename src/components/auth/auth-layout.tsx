@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Waves } from "@/components/effects/waves";
 
 const benefits = [
   "Search every invoice, receipt, and business record",
@@ -20,8 +21,27 @@ export function AuthLayout({
       <div className="nexus-grid pointer-events-none absolute inset-0 opacity-35" />
       <div className="pointer-events-none absolute left-[12%] top-[8%] h-80 w-80 rounded-full bg-[#2DD4BF]/10 blur-[120px]" />
 
-      <section className="relative hidden min-h-dvh flex-col justify-between border-r border-white/8 px-10 py-9 lg:flex xl:px-16 xl:py-12">
-        <Link href="/" className="flex w-fit items-center gap-3" aria-label="Back to Nexus Ops home">
+      <section className="relative hidden min-h-dvh overflow-hidden border-r border-white/8 lg:flex lg:flex-col lg:justify-between lg:px-10 lg:py-9 xl:px-16 xl:py-12">
+        <Waves
+          lineColor="rgba(94, 234, 212, 0.34)"
+          waveSpeedX={0.025}
+          waveSpeedY={0.025}
+          waveAmpX={30}
+          waveAmpY={20}
+          friction={0.92}
+          tension={0.008}
+          maxCursorMove={72}
+          xGap={17}
+          yGap={46}
+          className="opacity-90"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.12),rgba(5,5,5,0.62)),radial-gradient(circle_at_28%_42%,rgba(5,5,5,0.12),rgba(5,5,5,0.7)_72%)]" />
+
+        <Link
+          href="/"
+          className="relative z-10 flex w-fit items-center gap-3"
+          aria-label="Back to Nexus Ops home"
+        >
           <span className="h-2.5 w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_18px_rgba(45,212,191,0.7)]" />
           <span className="text-sm font-semibold tracking-[0.18em] text-white">
             NEXUS<span className="text-[#71717A]">/OPS</span>
@@ -30,10 +50,14 @@ export function AuthLayout({
 
         <div className="relative z-10 max-w-2xl py-16">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-[#5EEAD4]">
-            {isSignUp ? "Your operational memory starts here" : "Your workspace is ready"}
+            {isSignUp
+              ? "Your operational memory starts here"
+              : "Your workspace is ready"}
           </p>
           <h1 className="mt-7 max-w-xl text-balance text-[clamp(3.4rem,5.2vw,6.2rem)] font-medium leading-[0.92] tracking-[-0.055em] text-white">
-            {isSignUp ? "Give every document a purpose." : "Return to complete clarity."}
+            {isSignUp
+              ? "Give every document a purpose."
+              : "Return to complete clarity."}
           </h1>
           <p className="mt-7 max-w-lg text-pretty text-base leading-7 text-[#A1A1AA]">
             {isSignUp
@@ -49,14 +73,18 @@ export function AuthLayout({
                   Workspace readiness
                 </span>
               </div>
-              <span className="font-mono text-[9px] text-[#52525B]">SECURE</span>
+              <span className="font-mono text-[9px] text-[#52525B]">
+                SECURE
+              </span>
             </div>
             <div className="grid grid-cols-[1fr_0.8fr]">
               <div className="space-y-3 border-r border-white/8 p-5">
                 {benefits.map((benefit) => (
                   <div key={benefit} className="flex items-start gap-3">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#2DD4BF]" />
-                    <p className="text-xs leading-5 text-[#D4D4D8]">{benefit}</p>
+                    <p className="text-xs leading-5 text-[#D4D4D8]">
+                      {benefit}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -65,9 +93,14 @@ export function AuthLayout({
                   <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#52525B]">
                     Document signal
                   </p>
-                  <p className="mt-2 text-2xl font-medium tracking-[-0.04em] text-white">Clear</p>
+                  <p className="mt-2 text-2xl font-medium tracking-[-0.04em] text-white">
+                    Clear
+                  </p>
                 </div>
-                <div className="mt-8 flex h-16 items-end gap-1.5" aria-hidden="true">
+                <div
+                  className="mt-8 flex h-16 items-end gap-1.5"
+                  aria-hidden="true"
+                >
                   {[30, 48, 38, 64, 52, 78, 68, 92].map((height) => (
                     <span
                       key={height}
@@ -81,7 +114,7 @@ export function AuthLayout({
           </div>
         </div>
 
-        <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.15em] text-[#52525B]">
+        <div className="relative z-10 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.15em] text-[#52525B]">
           <span>© {new Date().getFullYear()} Nexus Ops</span>
           <span>English / አማርኛ</span>
         </div>
@@ -89,7 +122,11 @@ export function AuthLayout({
 
       <section className="relative flex min-h-dvh flex-col px-5 py-5 sm:px-8 sm:py-8 lg:px-12 xl:px-20">
         <div className="flex items-center justify-between lg:justify-end">
-          <Link href="/" className="flex items-center gap-2.5 lg:hidden" aria-label="Back to Nexus Ops home">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 lg:hidden"
+            aria-label="Back to Nexus Ops home"
+          >
             <span className="h-2 w-2 rounded-full bg-[#2DD4BF]" />
             <span className="text-xs font-semibold tracking-[0.16em] text-white">
               NEXUS<span className="text-[#71717A]">/OPS</span>

@@ -1,9 +1,15 @@
 "use client";
 
 import { motion, type Variants } from "motion/react";
-import { ArrowRight, FileText, MagnifyingGlass, Sparkle } from "@phosphor-icons/react";
+import {
+  ArrowRight,
+  FileText,
+  MagnifyingGlass,
+  Sparkle,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
+import { Aurora } from "@/components/effects/aurora";
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -25,13 +31,17 @@ export function Hero() {
 
   return (
     <section className="relative isolate flex min-h-[980px] items-center overflow-hidden px-5 pb-28 pt-40 sm:px-8 lg:min-h-[1060px] lg:pb-40 lg:pt-48">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(45,212,191,0.14),transparent_31%),radial-gradient(circle_at_84%_56%,rgba(45,212,191,0.08),transparent_28%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[48rem] overflow-hidden opacity-75 [mask-image:linear-gradient(to_bottom,black_0%,black_44%,transparent_92%)]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(45,212,191,0.16),transparent_58%)]" />
+        <Aurora
+          colorStops={["#134E4A", "#5EEAD4", "#0F766E"]}
+          blend={0.68}
+          amplitude={0.82}
+          speed={0.55}
+          className="relative opacity-70 mix-blend-screen"
+        />
+      </div>
       <div className="nexus-grid pointer-events-none absolute inset-0 opacity-40" />
-      <motion.div
-        animate={{ x: [0, 35, 0], y: [0, -25, 0], opacity: [0.28, 0.5, 0.28] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        className="pointer-events-none absolute left-[8%] top-[28%] h-64 w-64 rounded-full bg-[#2DD4BF]/10 blur-[100px]"
-      />
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center text-center">
         <motion.p
@@ -85,7 +95,10 @@ export function Hero() {
           className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
         >
           <motion.div
-            whileHover={{ y: -4, boxShadow: "0 18px 60px rgba(45,212,191,0.24)" }}
+            whileHover={{
+              y: -4,
+              boxShadow: "0 18px 60px rgba(45,212,191,0.24)",
+            }}
             whileTap={{ scale: 0.97 }}
             className="w-full sm:w-auto"
           >
@@ -99,7 +112,11 @@ export function Hero() {
           </motion.div>
           <motion.a
             href="#features"
-            whileHover={{ y: -4, borderColor: "rgba(94,234,212,0.45)", backgroundColor: "rgba(24,24,27,0.8)" }}
+            whileHover={{
+              y: -4,
+              borderColor: "rgba(94,234,212,0.45)",
+              backgroundColor: "rgba(24,24,27,0.8)",
+            }}
             whileTap={{ scale: 0.97 }}
             className="flex h-13 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#0B0B0D]/70 px-7 text-sm font-semibold text-white sm:w-auto"
           >
@@ -131,9 +148,14 @@ export function Hero() {
             <div className="grid min-h-[430px] lg:grid-cols-[0.72fr_1.28fr]">
               <div className="border-b border-white/8 p-5 sm:p-7 lg:border-b-0 lg:border-r">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-white">Document stream</p>
+                  <p className="text-sm font-medium text-white">
+                    Document stream
+                  </p>
                   <motion.button
-                    whileHover={{ scale: 1.05, backgroundColor: "rgba(45,212,191,0.14)" }}
+                    whileHover={{
+                      scale: 1.05,
+                      backgroundColor: "rgba(45,212,191,0.14)",
+                    }}
                     whileTap={{ scale: 0.95 }}
                     className="rounded-md border border-[#2DD4BF]/25 p-2 text-[#5EEAD4]"
                     aria-label="Add document"
@@ -148,12 +170,17 @@ export function Hero() {
                       initial={{ opacity: 0, x: -18 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.9 + index * 0.12, duration: 0.55 }}
-                      whileHover={{ x: 5, borderColor: "rgba(45,212,191,0.25)" }}
+                      whileHover={{
+                        x: 5,
+                        borderColor: "rgba(45,212,191,0.25)",
+                      }}
                       className="flex items-center justify-between rounded-lg border border-white/7 bg-[#111113] p-3.5"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <FileText className="h-4 w-4 shrink-0 text-[#5EEAD4]" />
-                        <span className="truncate text-xs text-[#D4D4D8]">{name}</span>
+                        <span className="truncate text-xs text-[#D4D4D8]">
+                          {name}
+                        </span>
                       </div>
                       <span className="ml-3 font-mono text-[9px] uppercase tracking-[0.12em] text-[#71717A]">
                         {state}
@@ -162,7 +189,9 @@ export function Hero() {
                   ))}
                 </div>
                 <div className="mt-8 rounded-lg border border-dashed border-[#2DD4BF]/20 bg-[#2DD4BF]/[0.03] p-5 text-center">
-                  <p className="text-xs text-[#A1A1AA]">Drop business files here</p>
+                  <p className="text-xs text-[#A1A1AA]">
+                    Drop business files here
+                  </p>
                   <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.14em] text-[#52525B]">
                     PDF, image, spreadsheet
                   </p>
@@ -175,8 +204,12 @@ export function Hero() {
                     <Sparkle className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">Operations analyst</p>
-                    <p className="mt-0.5 text-xs text-[#71717A]">Grounded in 148 workspace documents</p>
+                    <p className="text-sm font-medium text-white">
+                      Operations analyst
+                    </p>
+                    <p className="mt-0.5 text-xs text-[#71717A]">
+                      Grounded in 148 workspace documents
+                    </p>
                   </div>
                 </div>
 
@@ -196,27 +229,37 @@ export function Hero() {
                     className="mt-4 max-w-[92%] rounded-xl rounded-bl-sm border border-[#2DD4BF]/15 bg-[#101817] px-4 py-4"
                   >
                     <p className="text-sm leading-6 text-[#D4D4D8]">
-                      Packaging costs from Abeba Supply rose 18.4%, driven by three
-                      higher-volume orders in May.
+                      Packaging costs from Abeba Supply rose 18.4%, driven by
+                      three higher-volume orders in May.
                     </p>
-                    <div className="mt-4 flex items-end gap-1.5" aria-hidden="true">
-                      {[34, 48, 44, 68, 58, 82, 76, 100].map((height, index) => (
-                        <motion.span
-                          key={index}
-                          initial={{ height: 0 }}
-                          animate={{ height }}
-                          transition={{ delay: 1.6 + index * 0.05, duration: 0.45 }}
-                          className="w-full max-w-8 rounded-sm bg-[#2DD4BF]/70"
-                          style={{ height: `${height * 0.38}px` }}
-                        />
-                      ))}
+                    <div
+                      className="mt-4 flex items-end gap-1.5"
+                      aria-hidden="true"
+                    >
+                      {[34, 48, 44, 68, 58, 82, 76, 100].map(
+                        (height, index) => (
+                          <motion.span
+                            key={index}
+                            initial={{ height: 0 }}
+                            animate={{ height }}
+                            transition={{
+                              delay: 1.6 + index * 0.05,
+                              duration: 0.45,
+                            }}
+                            className="w-full max-w-8 rounded-sm bg-[#2DD4BF]/70"
+                            style={{ height: `${height * 0.38}px` }}
+                          />
+                        ),
+                      )}
                     </div>
                   </motion.div>
                 </div>
 
                 <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-[#0D0D0F] px-4 py-3 text-[#71717A]">
                   <MagnifyingGlass className="h-4 w-4" />
-                  <span className="text-xs">Ask about cash flow, vendors, or any document…</span>
+                  <span className="text-xs">
+                    Ask about cash flow, vendors, or any document…
+                  </span>
                 </div>
               </div>
             </div>
