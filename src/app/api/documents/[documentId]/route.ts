@@ -5,6 +5,34 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+export async function GET(
+  _request: Request,
+  { params }: RouteContext<"/api/documents/[documentId]">,
+) {
+  const appUser = await requireAppUser();
+  if (!appUser) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+
+  const { documentId } = await params;
+  const { data: document, error } = await supabaseAdmin
+    .from("documents")
+    .select("id, originalName, mimeType, sizeBytes, pageCount, status, errorMessage, parserUsed, processingCompletedAt, createdAt")
+    .eq("id", documentId)
+    .eq("userId", appUser.id)
+    .maybeSingle();
+
+  if (error) return NextResponse.json({ error: "The document could not be loaded." }, { status: 500 });
+  if (!document) return NextResponse.json({ error: "Document not found." }, { status: 404 });
+
+  const { data: summaries, error: summaryError } = await supabaseAdmin
+    .from("document_summaries")
+    .select("id, summary, language, provider, model, createdAt")
+    .eq("documentId", documentId)
+    .order("createdAt", { ascending: false });
+
+  if (summaryError) return NextResponse.json({ error: "Document summaries could not be loaded." }, { status: 500 });
+  return NextResponse.json({ document: { ...document, summaries: summaries ?? [] } }, { headers: { "Cache-Control": "no-store" } });
+}
+
 export async function POST(
   _request: Request,
   { params }: RouteContext<"/api/documents/[documentId]">,

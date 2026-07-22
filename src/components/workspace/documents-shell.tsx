@@ -2,33 +2,21 @@
 
 import { UserButton } from "@clerk/nextjs";
 import {
-  ArrowClockwise,
-  ArrowSquareOut,
   ChatCenteredDots,
-  DownloadSimple,
+  ArrowRight,
   FilePdf,
   FileText,
   House,
   MagnifyingGlass,
   Plus,
   SidebarSimple,
-  SpinnerGap,
-  Trash,
-  WarningCircle,
   X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DocumentUpload } from "./document-upload";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { WorkspaceDocument } from "@/lib/documents/types";
 
 function formatBytes(bytes: number) {
@@ -62,9 +50,6 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
   const [query, setQuery] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<WorkspaceDocument | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [retryingDocumentId, setRetryingDocumentId] = useState<string | null>(null);
   const hasProcessingDocuments = documents.some(
     (document) =>
       ["OCR_PROCESSING", "OCR_COMPLETED", "CHUNKING", "EMBEDDING"].includes(
@@ -149,90 +134,6 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
     setUploadDialogOpen(false);
   };
 
-  const retryDocument = async (document: WorkspaceDocument) => {
-    if (retryingDocumentId) return;
-
-    setRetryingDocumentId(document.id);
-
-    try {
-      const response = await fetch(`/api/documents/${document.id}`, {
-        method: "POST",
-      });
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-
-      if (!response.ok) {
-        toast.error("Processing not restarted", {
-          description: payload.error || "The document could not be queued. Please try again.",
-        });
-        return;
-      }
-
-      statusesRef.current.set(document.id, "UPLOADED");
-      setQueuedDocumentIds((current) => new Set(current).add(document.id));
-      setDocuments((current) =>
-        current.map((item) =>
-          item.id === document.id
-            ? { ...item, errorMessage: null, status: "UPLOADED" }
-            : item,
-        ),
-      );
-      toast.success("Processing restarted", {
-        description: `${document.originalName} has been queued for another attempt.`,
-      });
-    } catch {
-      toast.error("Processing not restarted", {
-        description: "The connection was interrupted. Please try again.",
-      });
-    } finally {
-      setRetryingDocumentId(null);
-    }
-  };
-
-  const deleteDocument = async () => {
-    if (!documentToDelete || isDeleting) return;
-
-    setIsDeleting(true);
-
-    try {
-      const response = await fetch(`/api/documents/${documentToDelete.id}`, {
-        method: "DELETE",
-      });
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-
-      if (!response.ok) {
-        toast.error("Document not deleted", {
-          description: payload.error || "The document could not be deleted. Please try again.",
-        });
-        return;
-      }
-
-      const deletedDocument = documentToDelete;
-      statusesRef.current.delete(deletedDocument.id);
-      setQueuedDocumentIds((current) => {
-        const next = new Set(current);
-        next.delete(deletedDocument.id);
-        return next;
-      });
-      setDocuments((current) =>
-        current.filter((document) => document.id !== deletedDocument.id),
-      );
-      setDocumentToDelete(null);
-      toast.success("Document deleted", {
-        description: `${deletedDocument.originalName} and its processed data were removed.`,
-      });
-    } catch {
-      toast.error("Document not deleted", {
-        description: "The connection was interrupted. Please try again.",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   return (
     <main className="nexus-page min-h-dvh bg-[#050505] text-white">
       <div className="nexus-workspace-grid pointer-events-none fixed inset-0 opacity-30" />
@@ -284,7 +185,7 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
                 <div className="max-w-3xl">
                   <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5EEAD4]">Document library</p>
                   <h1 className="mt-4 text-balance text-[clamp(2.4rem,5vw,4.6rem)] font-medium leading-[0.98] tracking-[-0.05em] text-white">Every source, in one place.</h1>
-                  <p className="mt-5 max-w-xl text-base leading-7 text-[#A1A1AA] sm:text-lg">Open uploaded files, download originals, or add another source to your workspace.</p>
+                  <p className="mt-5 max-w-xl text-base leading-7 text-[#A1A1AA] sm:text-lg">Open a document record to review the source, generate summaries, and export the result.</p>
                 </div>
                 <button type="button" onClick={() => setUploadDialogOpen(true)} className="inline-flex h-11 w-fit items-center gap-2 rounded-lg bg-[#2DD4BF] px-5 text-sm font-semibold text-[#04100E] transition-colors hover:bg-[#5EEAD4] active:translate-y-px">
                   <Plus className="h-4 w-4" weight="bold" />
@@ -334,37 +235,10 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
                           <td className="px-4 py-4"><DocumentStatus status={document.status} errorMessage={document.errorMessage} /></td>
                           <td className="px-7 py-4">
                             <div className="flex items-center justify-end gap-2">
-                              {document.status === "FAILED" ? (
-                                <button
-                                  type="button"
-                                  disabled={retryingDocumentId === document.id}
-                                  onClick={() => retryDocument(document)}
-                                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2DD4BF]/20 px-3 text-xs font-medium text-[#5EEAD4] transition-colors hover:border-[#2DD4BF]/40 hover:bg-[#2DD4BF]/8 disabled:cursor-wait disabled:opacity-60"
-                                >
-                                  {retryingDocumentId === document.id ? (
-                                    <SpinnerGap className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
-                                  ) : (
-                                    <ArrowClockwise className="h-3.5 w-3.5" />
-                                  )}
-                                  Retry
-                                </button>
-                              ) : null}
-                              <a href={`/api/documents/${document.id}/file`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white">
-                                <ArrowSquareOut className="h-3.5 w-3.5" />
-                                View
-                              </a>
-                              <a href={`/api/documents/${document.id}/file?download=1`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white">
-                                <DownloadSimple className="h-3.5 w-3.5" />
-                                Download
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => setDocumentToDelete(document)}
-                                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-400/15 px-3 text-xs font-medium text-red-300 transition-colors hover:border-red-400/35 hover:bg-red-400/8 hover:text-red-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
-                              >
-                                <Trash className="h-3.5 w-3.5" />
-                                Delete
-                              </button>
+                              <Link href={`/workspace/documents/${document.id}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2DD4BF]/25 bg-[#2DD4BF]/8 px-3 text-xs font-semibold text-[#5EEAD4] transition-colors hover:border-[#2DD4BF]/45 hover:bg-[#2DD4BF]/12 hover:text-[#99F6E4]">
+                                Open
+                                <ArrowRight className="h-3.5 w-3.5" weight="bold" />
+                              </Link>
                             </div>
                           </td>
                         </tr>
@@ -394,58 +268,6 @@ export function DocumentsShell({ initialDocuments }: { initialDocuments: Workspa
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={Boolean(documentToDelete)}
-        onOpenChange={(open) => {
-          if (!open && !isDeleting) setDocumentToDelete(null);
-        }}
-      >
-        <DialogContent
-          showCloseButton={!isDeleting}
-          className="border border-red-400/15 bg-[#0B0B0D] p-0 text-white shadow-[0_32px_120px_rgba(0,0,0,0.8)] sm:max-w-md"
-        >
-          <div className="p-6 sm:p-7">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/8 text-red-300">
-              <WarningCircle className="h-5 w-5" weight="fill" />
-            </div>
-            <DialogHeader className="mt-5 pr-8 text-left">
-              <DialogTitle className="text-xl font-semibold tracking-[-0.025em] text-white">
-                Delete this document?
-              </DialogTitle>
-              <DialogDescription className="mt-1 leading-6 text-[#A1A1AA]">
-                <span className="font-medium text-[#E4E4E7]">
-                  {documentToDelete?.originalName}
-                </span>{" "}
-                will be permanently removed with its stored file, extracted text, chunks,
-                embeddings, and related processing records. This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-          <DialogFooter className="m-0 border-t border-white/8 bg-[#08080A] px-6 py-4 sm:px-7">
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={() => setDocumentToDelete(null)}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-white/10 px-4 text-sm font-medium text-[#D4D4D8] transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={deleteDocument}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-400 disabled:cursor-wait disabled:opacity-70"
-            >
-              {isDeleting ? (
-                <SpinnerGap className="h-4 w-4 animate-spin motion-reduce:animate-none" />
-              ) : (
-                <Trash className="h-4 w-4" weight="bold" />
-              )}
-              {isDeleting ? "Deleting…" : "Delete permanently"}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }
