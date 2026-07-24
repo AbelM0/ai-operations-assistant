@@ -49,7 +49,7 @@ export async function createDeepSeekCompletion({
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-      max_tokens: 5000,
+      max_tokens: 7000,
       stream: false,
       ...(model.startsWith("deepseek-v4-")
         ? { thinking: { type: "disabled" } }

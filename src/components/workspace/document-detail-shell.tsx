@@ -1,5 +1,6 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
 import { UserButton } from "@clerk/nextjs";
 import {
   ArrowClockwise,
@@ -19,15 +20,14 @@ import {
   WarningCircle,
   X,
 } from "@phosphor-icons/react";
+import { DefaultChatTransport } from "ai";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { StreamingMarkdown } from "@/components/ai/streaming-markdown";
 import type { SummaryModelOption } from "@/lib/ai/models";
-import type {
-  DocumentSummary,
-  WorkspaceDocumentDetail,
-} from "@/lib/documents/types";
+import type { WorkspaceDocumentDetail } from "@/lib/documents/types";
 import {
   Dialog,
   DialogContent,
@@ -60,32 +60,7 @@ function formatDate(value: string) {
 }
 
 function SummaryContent({ value }: { value: string }) {
-  const blocks = useMemo(() => value.split("\n"), [value]);
-  return (
-    <div className="space-y-3 text-sm leading-7 text-[#D4D4D8] sm:text-[15px]">
-      {blocks.map((line, index) => {
-        const key = `${index}-${line.slice(0, 20)}`;
-        if (!line.trim()) return <div key={key} className="h-1" />;
-        if (/^#{1,3}\s/.test(line))
-          return (
-            <h3
-              key={key}
-              className="pt-3 text-base font-semibold tracking-[-0.02em] text-white"
-            >
-              {line.replace(/^#{1,3}\s/, "")}
-            </h3>
-          );
-        if (/^[-*]\s/.test(line))
-          return (
-            <p key={key} className="grid grid-cols-[0.7rem_1fr] gap-2">
-              <span className="mt-[0.68rem] h-1 w-1 rounded-full bg-[#2DD4BF]" />
-              <span>{line.replace(/^[-*]\s/, "").replace(/\*\*/g, "")}</span>
-            </p>
-          );
-        return <p key={key}>{line.replace(/\*\*/g, "")}</p>;
-      })}
-    </div>
-  );
+  return <StreamingMarkdown>{value}</StreamingMarkdown>;
 }
 
 export function DocumentDetailShell({
@@ -104,10 +79,75 @@ export function DocumentDetailShell({
     initialDocument.summaries[0]?.id || "",
   );
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const summaryTransport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: `/api/documents/${initialDocument.id}/summary`,
+      }),
+    [initialDocument.id],
+  );
+  const {
+    messages: summaryMessages,
+    sendMessage: sendSummaryMessage,
+    status: summaryStatus,
+    error: summaryError,
+    stop: stopSummary,
+    setMessages: setSummaryMessages,
+    clearError: clearSummaryError,
+  } = useChat({
+    transport: summaryTransport,
+    throttle: 40,
+    onFinish: async ({ isAbort, isError }) => {
+      if (isAbort || isError) return;
+
+      try {
+        const response = await fetch(`/api/documents/${initialDocument.id}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          throw new Error("The saved summary could not be refreshed.");
+        }
+        const payload = (await response.json()) as {
+          document: WorkspaceDocumentDetail;
+        };
+        setDocument(payload.document);
+        if (payload.document.summaries[0]) {
+          setSelectedSummaryId(payload.document.summaries[0].id);
+        }
+        toast.success("Summary ready", {
+          description: "You can now review or export it.",
+        });
+      } catch (refreshError) {
+        toast.error("Summary generated but not refreshed", {
+          description:
+            refreshError instanceof Error
+              ? refreshError.message
+              : "Refresh the page to load the saved version.",
+        });
+      }
+    },
+    onError: (summaryRequestError) => {
+      toast.error("Summary not generated", {
+        description: summaryRequestError.message,
+      });
+    },
+  });
+  const isSummarizing =
+    summaryStatus === "submitted" || summaryStatus === "streaming";
+  const streamedSummary = useMemo(() => {
+    const message = [...summaryMessages]
+      .reverse()
+      .find((item) => item.role === "assistant");
+    return (
+      message?.parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("") || ""
+    );
+  }, [summaryMessages]);
   const currentSummary =
     document.summaries.find((summary) => summary.id === selectedSummaryId) ||
     document.summaries[0];
@@ -133,37 +173,14 @@ export function DocumentDetailShell({
     };
   }, [document.id, document.status]);
 
-  const summarize = async () => {
+  const summarize = () => {
     if (isSummarizing || document.status !== "READY") return;
-    setIsSummarizing(true);
-    try {
-      const response = await fetch(`/api/documents/${document.id}/summary`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: selectedModel }),
-      });
-      const payload = (await response.json().catch(() => ({}))) as {
-        summary?: DocumentSummary;
-        error?: string;
-      };
-      if (!response.ok || !payload.summary)
-        throw new Error(payload.error || "The summary could not be generated.");
-      setDocument((current) => ({
-        ...current,
-        summaries: [payload.summary!, ...current.summaries],
-      }));
-      setSelectedSummaryId(payload.summary.id);
-      toast.success("Summary ready", {
-        description: "You can now review or export it.",
-      });
-    } catch (error) {
-      toast.error("Summary not generated", {
-        description:
-          error instanceof Error ? error.message : "Please try again.",
-      });
-    } finally {
-      setIsSummarizing(false);
-    }
+    setSummaryMessages([]);
+    clearSummaryError();
+    void sendSummaryMessage(
+      { text: "Generate a comprehensive summary of this document." },
+      { body: { model: selectedModel } },
+    );
   };
 
   const retry = async () => {
@@ -173,16 +190,28 @@ export function DocumentDetailShell({
         method: "POST",
       });
       const payload = (await response.json().catch(() => ({}))) as {
+        document?: {
+          status: string;
+          errorMessage?: string | null;
+        };
         error?: string;
       };
-      if (!response.ok)
+      if (!response.ok) {
+        if (payload.document) {
+          setDocument((current) => ({ ...current, ...payload.document }));
+        }
         throw new Error(payload.error || "Processing could not be restarted.");
+      }
       setDocument((current) => ({
         ...current,
-        status: "UPLOADED",
-        errorMessage: null,
+        status: payload.document?.status || "UPLOADED",
+        errorMessage: payload.document?.errorMessage ?? null,
       }));
-      toast.success("Processing restarted");
+      toast.success(
+        payload.document?.status === "READY"
+          ? "Document ready"
+          : "Processing restarted",
+      );
     } catch (error) {
       toast.error("Processing not restarted", {
         description:
@@ -330,15 +359,31 @@ export function DocumentDetailShell({
             </div>
           </section>
 
-          {document.status === "FAILED" ? (
-            <section className="mt-6 flex flex-col gap-4 rounded-xl border border-red-400/15 bg-red-400/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between">
+          {["UPLOADED", "FAILED"].includes(document.status) ? (
+            <section
+              className={`mt-6 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between ${
+                document.status === "FAILED"
+                  ? "border border-red-400/15 bg-red-400/[0.04]"
+                  : "border border-amber-300/15 bg-amber-300/[0.04]"
+              }`}
+            >
               <div>
-                <p className="text-sm font-semibold text-red-200">
-                  Processing failed
+                <p
+                  className={`text-sm font-semibold ${
+                    document.status === "FAILED"
+                      ? "text-red-200"
+                      : "text-amber-100"
+                  }`}
+                >
+                  {document.status === "FAILED"
+                    ? "Processing failed"
+                    : "Processing has not started"}
                 </p>
                 <p className="mt-1 text-sm text-[#A1A1AA]">
-                  {document.errorMessage ||
-                    "The document could not be processed."}
+                  {document.status === "FAILED"
+                    ? document.errorMessage ||
+                      "The document could not be processed."
+                    : "Restart processing to extract and index this document."}
                 </p>
               </div>
               <button
@@ -352,7 +397,7 @@ export function DocumentDetailShell({
                 ) : (
                   <ArrowClockwise className="h-4 w-4" />
                 )}
-                Retry processing
+                Restart processing
               </button>
             </section>
           ) : null}
@@ -425,8 +470,8 @@ export function DocumentDetailShell({
                     Summarize this document
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-[#8B8B95]">
-                    Create a concise review of the source text and keep each
-                    version in this record.
+                    Create a detailed, structured review of the source text and
+                    keep each version in this record.
                   </p>
                   <label className="mt-5 block">
                     <span className="text-xs font-medium text-[#D4D4D8]">
@@ -457,17 +502,17 @@ export function DocumentDetailShell({
                   </label>
                   <button
                     type="button"
-                    onClick={summarize}
-                    disabled={document.status !== "READY" || isSummarizing}
+                    onClick={isSummarizing ? stopSummary : summarize}
+                    disabled={document.status !== "READY"}
                     className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#2DD4BF] text-sm font-semibold text-[#04100E] transition-colors hover:bg-[#5EEAD4] disabled:cursor-not-allowed disabled:bg-[#1F4F48] disabled:text-[#83A8A2]"
                   >
                     {isSummarizing ? (
-                      <SpinnerGap className="h-4 w-4 animate-spin" />
+                      <X className="h-4 w-4" weight="bold" />
                     ) : (
                       <Sparkle className="h-4 w-4" weight="fill" />
                     )}
                     {isSummarizing
-                      ? "Summarizing…"
+                      ? "Stop generating"
                       : document.status === "READY"
                         ? "Generate summary"
                         : "Available after processing"}
@@ -491,9 +536,10 @@ export function DocumentDetailShell({
                         <select
                           aria-label="Summary version"
                           value={currentSummary?.id}
-                          onChange={(event) =>
-                            setSelectedSummaryId(event.target.value)
-                          }
+                          onChange={(event) => {
+                            setSummaryMessages([]);
+                            setSelectedSummaryId(event.target.value);
+                          }}
                           className="h-9 max-w-48 rounded-md border border-white/10 bg-[#111113] px-2 text-xs text-[#D4D4D8] outline-none"
                         >
                           {document.summaries.map((summary, index) => (
@@ -525,7 +571,52 @@ export function DocumentDetailShell({
                     </div>
                   </div>
                   <div className="max-h-[66dvh] overflow-y-auto p-5 sm:p-7 lg:px-9">
-                    {currentSummary ? (
+                    {summaryError ? (
+                      <div
+                        role="alert"
+                        className="mb-5 flex items-start justify-between gap-3 rounded-lg border border-red-400/15 bg-red-400/[0.05] px-3 py-2.5 text-xs leading-5 text-red-200"
+                      >
+                        <span>{summaryError.message}</span>
+                        <button
+                          type="button"
+                          onClick={clearSummaryError}
+                          className="shrink-0 text-red-300 hover:text-white"
+                          aria-label="Dismiss summary error"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : null}
+                    {summaryStatus === "submitted" && !streamedSummary ? (
+                      <div className="mx-auto max-w-3xl py-4" aria-live="polite">
+                        <p className="text-sm font-medium text-[#D4D4D8]">
+                          Preparing document context
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[#71717A]">
+                          Reading the indexed pages before the first words
+                          arrive.
+                        </p>
+                        <div className="mt-5 space-y-2">
+                          <div className="h-2.5 w-4/5 animate-pulse rounded bg-white/8" />
+                          <div className="h-2.5 w-2/3 animate-pulse rounded bg-white/6" />
+                        </div>
+                      </div>
+                    ) : streamedSummary ? (
+                      <div className="mx-auto max-w-3xl" aria-live="polite">
+                        <StreamingMarkdown
+                          streaming={summaryStatus === "streaming"}
+                        >
+                          {streamedSummary}
+                        </StreamingMarkdown>
+                        <div className="mt-9 border-t border-white/8 pt-4 font-mono text-[9px] uppercase tracking-[0.1em] text-[#52525B]">
+                          {isSummarizing
+                            ? `Generating live with ${selectedModel}`
+                            : currentSummary
+                              ? `Generated ${formatDate(currentSummary.createdAt)} · ${currentSummary.model}`
+                              : `Generated with ${selectedModel}`}
+                        </div>
+                      </div>
+                    ) : currentSummary ? (
                       <div className="mx-auto max-w-3xl">
                         <SummaryContent value={currentSummary.summary} />
                         <div className="mt-9 border-t border-white/8 pt-4 font-mono text-[9px] uppercase tracking-[0.1em] text-[#52525B]">

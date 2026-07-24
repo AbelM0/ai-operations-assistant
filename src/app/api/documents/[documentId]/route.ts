@@ -1,5 +1,6 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth/require-app-user";
+import { processDocument } from "@/lib/documents/process-document";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -98,21 +99,40 @@ export async function POST(
     }
   }
 
-  after(async () => {
-    const { processDocument } = await import("@/lib/documents/process-document");
-    await processDocument(document.id);
-  });
+  await processDocument(document.id);
 
-  return NextResponse.json(
-    {
-      document: {
-        id: document.id,
-        originalName: document.originalName,
-        status: "UPLOADED",
+  const { data: processedDocument, error: processedDocumentError } =
+    await supabaseAdmin
+      .from("documents")
+      .select("id, originalName, status, errorMessage")
+      .eq("id", document.id)
+      .eq("userId", appUser.id)
+      .single();
+
+  if (processedDocumentError) {
+    console.error(
+      "Could not load the restarted document status",
+      processedDocumentError,
+    );
+    return NextResponse.json(
+      { error: "Processing finished, but its status could not be loaded." },
+      { status: 500 },
+    );
+  }
+
+  if (processedDocument.status === "FAILED") {
+    return NextResponse.json(
+      {
+        document: processedDocument,
+        error:
+          processedDocument.errorMessage ||
+          "The document could not be processed.",
       },
-    },
-    { status: 202 },
-  );
+      { status: 422 },
+    );
+  }
+
+  return NextResponse.json({ document: processedDocument });
 }
 
 export async function DELETE(

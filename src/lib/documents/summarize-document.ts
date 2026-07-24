@@ -23,45 +23,49 @@ function buildBatches(chunks: Chunk[]) {
   return batches;
 }
 
-const systemPrompt = `You summarize business documents with precision. Use only facts present in the supplied text. Do not invent missing details. Preserve important names, dates, amounts, obligations, risks, decisions, and deadlines. Write clear Markdown with these sections when supported by the source: Overview, Key points, Important figures and dates, Risks or obligations, and Recommended follow-up. Omit unsupported sections. Keep the result useful and concise.`;
+export const summarySystemPrompt = `You create comprehensive, factual document summaries.
 
-export async function summarizeDocumentChunks(chunks: Chunk[], model: string) {
+Rules:
+1. Use only information present in the supplied document text.
+2. Cover every major topic, argument, section, and conclusion supported by the document.
+3. Preserve important names, definitions, dates, amounts, obligations, risks, decisions, examples, and deadlines.
+4. Scale the detail to the document. Do not compress a long or technical document into a few short bullets.
+5. Write polished Markdown using descriptive headings, paragraphs, lists, and tables where useful.
+6. Prefer these sections when supported: Overview, Main topics, Key details, Important figures and dates, Risks or obligations, Conclusions, and Recommended follow-up.
+7. Omit unsupported sections and never invent missing information.
+8. Return the summary itself, without a preamble or fenced Markdown block.`;
+
+export async function prepareDocumentSummary(chunks: Chunk[], model: string) {
   const batches = buildBatches(chunks);
   if (batches.length === 0) throw new Error("This document has no extracted text to summarize.");
 
-  const usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
-  const addUsage = (next: typeof usage) => {
-    usage.promptTokens += next.promptTokens;
-    usage.completionTokens += next.completionTokens;
-    usage.totalTokens += next.totalTokens;
+  const priorUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+  const addUsage = (next: typeof priorUsage) => {
+    priorUsage.promptTokens += next.promptTokens;
+    priorUsage.completionTokens += next.completionTokens;
+    priorUsage.totalTokens += next.totalTokens;
   };
 
   if (batches.length === 1) {
-    const result = await createDeepSeekCompletion({
-      model,
-      system: systemPrompt,
-      user: `Summarize this document.\n${batches[0]}`,
-    });
-    addUsage(result.usage);
-    return { summary: result.content, usage };
+    return {
+      prompt: `Create a detailed summary of this complete document.\n${batches[0]}`,
+      priorUsage,
+    };
   }
 
   const partialSummaries: string[] = [];
   for (let index = 0; index < batches.length; index += 1) {
     const result = await createDeepSeekCompletion({
       model,
-      system: systemPrompt,
+      system: summarySystemPrompt,
       user: `This is part ${index + 1} of ${batches.length} of one document. Produce a factual intermediate summary that retains details needed for a final whole-document summary.\n${batches[index]}`,
     });
     partialSummaries.push(`## Part ${index + 1}\n${result.content}`);
     addUsage(result.usage);
   }
 
-  const finalResult = await createDeepSeekCompletion({
-    model,
-    system: systemPrompt,
-    user: `Combine these intermediate summaries into one coherent summary of the complete document. Remove repetition and do not mention document parts.\n\n${partialSummaries.join("\n\n")}`,
-  });
-  addUsage(finalResult.usage);
-  return { summary: finalResult.content, usage };
+  return {
+    prompt: `Combine these intermediate summaries into one detailed, coherent summary of the complete document. Cover all major topics, remove repetition, and do not mention document parts.\n\n${partialSummaries.join("\n\n")}`,
+    priorUsage,
+  };
 }

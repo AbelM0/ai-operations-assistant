@@ -1,23 +1,46 @@
-import { NextResponse } from "next/server";
+import { smoothStream, streamText } from "ai";
+import { getDeepSeekModel } from "@/lib/ai/chat-model";
 import { isSummaryModel } from "@/lib/ai/models";
 import { requireAppUser } from "@/lib/auth/require-app-user";
-import { summarizeDocumentChunks } from "@/lib/documents/summarize-document";
+import {
+  prepareDocumentSummary,
+  summarySystemPrompt,
+} from "@/lib/documents/summarize-document";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
+
+const DEFAULT_SUMMARY_OUTPUT_TOKENS = 7_000;
+
+function summaryOutputTokenLimit() {
+  const configured = Number.parseInt(
+    process.env.SUMMARY_MAX_OUTPUT_TOKENS || "",
+    10,
+  );
+  return Number.isFinite(configured)
+    ? Math.max(1_000, Math.min(12_000, configured))
+    : DEFAULT_SUMMARY_OUTPUT_TOKENS;
+}
+
+function errorResponse(message: string, status: number) {
+  return new Response(message, {
+    status,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
 
 export async function POST(
   request: Request,
   { params }: RouteContext<"/api/documents/[documentId]/summary">,
 ) {
   const appUser = await requireAppUser();
-  if (!appUser) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  if (!appUser) return errorResponse("Authentication required.", 401);
 
   const body = (await request.json().catch(() => ({}))) as { model?: string };
   const model = body.model?.trim() || "";
   if (!isSummaryModel(model)) {
-    return NextResponse.json({ error: "Choose a supported summary model." }, { status: 400 });
+    return errorResponse("Choose a supported summary model.", 400);
   }
 
   const { documentId } = await params;
@@ -28,10 +51,15 @@ export async function POST(
     .eq("userId", appUser.id)
     .maybeSingle();
 
-  if (documentError) return NextResponse.json({ error: "The document could not be loaded." }, { status: 500 });
-  if (!document) return NextResponse.json({ error: "Document not found." }, { status: 404 });
+  if (documentError) {
+    return errorResponse("The document could not be loaded.", 500);
+  }
+  if (!document) return errorResponse("Document not found.", 404);
   if (document.status !== "READY") {
-    return NextResponse.json({ error: "The document must finish processing before it can be summarized." }, { status: 409 });
+    return errorResponse(
+      "The document must finish processing before it can be summarized.",
+      409,
+    );
   }
 
   const { data: chunks, error: chunksError } = await supabaseAdmin
@@ -40,36 +68,87 @@ export async function POST(
     .eq("documentId", documentId)
     .order("chunkIndex", { ascending: true });
 
-  if (chunksError) return NextResponse.json({ error: "The extracted document text could not be loaded." }, { status: 500 });
+  if (chunksError) {
+    return errorResponse("The extracted document text could not be loaded.", 500);
+  }
 
   try {
-    const result = await summarizeDocumentChunks(chunks ?? [], model);
-    const { data: summary, error: insertError } = await supabaseAdmin
-      .from("document_summaries")
-      .insert({ documentId, summary: result.summary, language: "en", provider: "deepseek", model })
-      .select("id, summary, language, provider, model, createdAt")
-      .single();
+    const prepared = await prepareDocumentSummary(chunks ?? [], model);
+    const summaryModel = getDeepSeekModel(model);
+    let aborted = false;
+    const result = streamText({
+      model: summaryModel.model,
+      system: summarySystemPrompt,
+      prompt: prepared.prompt,
+      temperature: 0.15,
+      maxOutputTokens: summaryOutputTokenLimit(),
+      abortSignal: request.signal,
+      experimental_transform: smoothStream({
+        delayInMs: 8,
+        chunking: "word",
+      }),
+      onAbort: () => {
+        aborted = true;
+      },
+      onEnd: async ({ text, usage }) => {
+        if (aborted || !text.trim()) return;
 
-    if (insertError) throw insertError;
+        const { error: insertError } = await supabaseAdmin
+          .from("document_summaries")
+          .insert({
+            documentId,
+            summary: text.trim(),
+            language: "en",
+            provider: summaryModel.provider,
+            model: summaryModel.modelId,
+          });
+        if (insertError) throw insertError;
 
-    if (result.usage.totalTokens > 0) {
-      await supabaseAdmin.from("ai_usage").insert({
-        userId: appUser.id,
-        provider: "deepseek",
-        model,
-        promptTokens: result.usage.promptTokens,
-        completionTokens: result.usage.completionTokens,
-        totalTokens: result.usage.totalTokens,
-        estimatedCost: 0,
-      });
-    }
+        const promptTokens =
+          prepared.priorUsage.promptTokens + (usage.inputTokens || 0);
+        const completionTokens =
+          prepared.priorUsage.completionTokens + (usage.outputTokens || 0);
+        const totalTokens =
+          prepared.priorUsage.totalTokens + (usage.totalTokens || 0);
 
-    return NextResponse.json({ summary }, { status: 201 });
+        if (totalTokens > 0) {
+          const { error: usageError } = await supabaseAdmin
+            .from("ai_usage")
+            .insert({
+              userId: appUser.id,
+              provider: summaryModel.provider,
+              model: summaryModel.modelId,
+              promptTokens,
+              completionTokens,
+              totalTokens,
+              estimatedCost: 0,
+            });
+          if (usageError) {
+            console.error("Could not save summary usage", usageError);
+          }
+        }
+      },
+    });
+
+    return result.toUIMessageStreamResponse({
+      headers: {
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+      onError: (error: unknown) => {
+        console.error(`Could not summarize document ${documentId}`, error);
+        return error instanceof Error
+          ? error.message
+          : "The summary could not be generated.";
+      },
+    });
   } catch (error) {
     console.error(`Could not summarize document ${documentId}`, error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "The summary could not be generated." },
-      { status: 502 },
+    return errorResponse(
+      error instanceof Error
+        ? error.message
+        : "The summary could not be generated.",
+      502,
     );
   }
 }

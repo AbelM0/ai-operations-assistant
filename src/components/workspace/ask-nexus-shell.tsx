@@ -1,5 +1,6 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
 import { UserButton } from "@clerk/nextjs";
 import {
   ArrowUp,
@@ -15,16 +16,16 @@ import {
   X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { StreamingMarkdown } from "@/components/ai/streaming-markdown";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { WorkspaceDocument } from "@/lib/documents/types";
-
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
+import type {
+  ConversationDetail,
+  ConversationSummary,
+  RagUIMessage,
+} from "@/lib/rag/types";
 
 const prompts = [
   "What are the most important facts in these documents?",
@@ -33,14 +34,66 @@ const prompts = [
   "Where do these documents disagree?",
 ];
 
-export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] }) {
+type ConversationResponse = {
+  conversation: ConversationDetail;
+  messages: RagUIMessage[];
+};
+
+export function AskNexusShell({
+  documents,
+  initialConversations,
+}: {
+  documents: WorkspaceDocument[];
+  initialConversations: ConversationSummary[];
+}) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [chatStarted, setChatStarted] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
-  const [isResponding, setIsResponding] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] =
+    useState<ConversationSummary[]>(initialConversations);
+  const [loadingConversationId, setLoadingConversationId] = useState<
+    string | null
+  >(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const {
+    messages,
+    sendMessage,
+    status,
+    error,
+    stop,
+    setMessages,
+    clearError,
+  } = useChat<RagUIMessage>({
+    throttle: 50,
+    onData: (part) => {
+      if (part.type === "data-sources") {
+        setConversationId(part.data.conversationId);
+        setConversations((current) => {
+          const nextConversation: ConversationSummary = {
+            id: part.data.conversationId,
+            title: part.data.title,
+            createdAt: part.data.createdAt,
+            lastMessageAt: new Date().toISOString(),
+          };
+          return [
+            nextConversation,
+            ...current.filter(
+              (conversation) => conversation.id !== nextConversation.id,
+            ),
+          ].slice(0, 12);
+        });
+      }
+    },
+  });
+  const isResponding = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, status]);
 
   const toggleDocument = (id: string) => {
     setSelectedIds((current) =>
@@ -48,34 +101,83 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
     );
   };
 
-  const sendMessage = (value = draft) => {
+  const sendQuestion = (value = draft) => {
     const question = value.trim();
     if (!question || selectedIds.length === 0 || isResponding) return;
 
-    setMessages((current) => [
-      ...current,
-      { id: crypto.randomUUID(), role: "user", content: question },
-    ]);
     setDraft("");
-    setIsResponding(true);
-
-    window.setTimeout(() => {
-      setMessages((current) => [
-        ...current,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content:
-            "This is the response layout for document-grounded answers. The retrieval service will replace this preview with an answer and exact source references.",
+    clearError();
+    void sendMessage(
+      { text: question },
+      {
+        body: {
+          conversationId,
+          documentIds: selectedIds,
         },
-      ]);
-      setIsResponding(false);
-    }, 850);
+      },
+    );
   };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    sendMessage();
+    sendQuestion();
+  };
+
+  const startNewChat = () => {
+    stop();
+    setMessages([]);
+    setDraft("");
+    setSelectedIds([]);
+    setConversationId(null);
+    setChatStarted(false);
+    setHistoryError(null);
+    clearError();
+  };
+
+  const loadConversation = async (id: string) => {
+    if (id === loadingConversationId) return;
+
+    stop();
+    clearError();
+    setHistoryError(null);
+    setLoadingConversationId(id);
+
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "The conversation could not be loaded.");
+      }
+
+      const payload = (await response.json()) as ConversationResponse;
+      const availableDocumentIds = new Set(
+        documents
+          .filter((document) => document.status === "READY")
+          .map((document) => document.id),
+      );
+
+      setMessages(payload.messages);
+      setSelectedIds(
+        payload.conversation.documentIds.filter((documentId) =>
+          availableDocumentIds.has(documentId),
+        ),
+      );
+      setConversationId(payload.conversation.id);
+      setChatStarted(true);
+      setDraft("");
+      setMobileNavOpen(false);
+    } catch (loadError) {
+      setHistoryError(
+        loadError instanceof Error
+          ? loadError.message
+          : "The conversation could not be loaded.",
+      );
+    } finally {
+      setLoadingConversationId(null);
+    }
   };
 
   return (
@@ -83,7 +185,13 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
       <div className="nexus-workspace-grid pointer-events-none fixed inset-0 opacity-30" />
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/8 bg-[#08080A]/95 px-4 py-5 backdrop-blur-xl lg:flex">
-        <AskNav documentCount={documents.length} />
+        <AskNav
+          documentCount={documents.length}
+          conversations={conversations}
+          activeConversationId={conversationId}
+          loadingConversationId={loadingConversationId}
+          onSelectConversation={loadConversation}
+        />
       </aside>
 
       {mobileNavOpen ? (
@@ -93,7 +201,13 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
             <button type="button" onClick={() => setMobileNavOpen(false)} className="absolute right-4 top-5 rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white" aria-label="Close navigation">
               <X className="h-5 w-5" />
             </button>
-            <AskNav documentCount={documents.length} />
+            <AskNav
+              documentCount={documents.length}
+              conversations={conversations}
+              activeConversationId={conversationId}
+              loadingConversationId={loadingConversationId}
+              onSelectConversation={loadConversation}
+            />
           </aside>
         </div>
       ) : null}
@@ -111,6 +225,23 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
           </div>
           <UserButton appearance={{ elements: { userButtonBox: "h-9 w-9 rounded-lg", avatarBox: "h-9 w-9 rounded-lg" } }} />
         </header>
+
+        {historyError ? (
+          <div
+            role="alert"
+            className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-lg border border-red-400/15 bg-red-400/[0.05] px-3 py-2.5 text-xs leading-5 text-red-200 sm:mx-7 lg:mx-10"
+          >
+            <span>{historyError}</span>
+            <button
+              type="button"
+              onClick={() => setHistoryError(null)}
+              className="shrink-0 text-red-300 hover:text-white"
+              aria-label="Dismiss conversation error"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : null}
 
         {!chatStarted ? (
           <DocumentSetup
@@ -131,7 +262,7 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
                   <span className="block truncate text-[11px] text-[#71717A] group-hover:text-[#A1A1AA]">Change document context</span>
                 </span>
               </button>
-              <button type="button" onClick={() => { setMessages([]); setDraft(""); }} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white active:translate-y-px">
+              <button type="button" onClick={startNewChat} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white active:translate-y-px">
                 <Plus className="h-3.5 w-3.5" weight="bold" />
                 New chat
               </button>
@@ -147,7 +278,7 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
                   <p className="mt-3 max-w-xl text-sm leading-6 text-[#8B8B95]">Ask across the selected documents. You can change the source set at any point in the conversation.</p>
                   <div className="mt-8 grid gap-2 sm:grid-cols-2">
                     {prompts.map((prompt) => (
-                      <button key={prompt} type="button" onClick={() => sendMessage(prompt)} className="min-h-16 rounded-lg border border-white/10 bg-[#0B0B0D] px-4 py-3 text-left text-sm leading-5 text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#0D1312] hover:text-white active:translate-y-px">
+                      <button key={prompt} type="button" onClick={() => sendQuestion(prompt)} className="min-h-16 rounded-lg border border-white/10 bg-[#0B0B0D] px-4 py-3 text-left text-sm leading-5 text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#0D1312] hover:text-white active:translate-y-px">
                         {prompt}
                       </button>
                     ))}
@@ -156,7 +287,24 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
               ) : (
                 <div className="mx-auto w-full max-w-3xl flex-1 py-8 sm:py-10">
                   <div className="space-y-8" aria-live="polite">
-                    {messages.map((message) => (
+                    {messages.map((message) => {
+                      const text = message.parts
+                        .filter((part) => part.type === "text")
+                        .map((part) => part.text)
+                        .join("");
+                      const sourcePart = message.parts.find(
+                        (part) => part.type === "data-sources",
+                      );
+                      const sources =
+                        sourcePart?.type === "data-sources"
+                          ? sourcePart.data.sources
+                          : [];
+                      const isStreamingMessage =
+                        status === "streaming" &&
+                        message.role === "assistant" &&
+                        message.id === messages.at(-1)?.id;
+
+                      return (
                       <article key={message.id} className={message.role === "user" ? "ml-auto max-w-[88%]" : "max-w-[92%]"}>
                         {message.role === "assistant" ? (
                           <div className="grid grid-cols-[2rem_1fr] gap-3">
@@ -164,47 +312,91 @@ export function AskNexusShell({ documents }: { documents: WorkspaceDocument[] })
                               <Sparkle className="h-3.5 w-3.5" weight="fill" />
                             </span>
                             <div>
-                              <p className="text-sm leading-7 text-[#D4D4D8] sm:text-[15px]">{message.content}</p>
-                              <div className="mt-4 rounded-lg border border-white/8 bg-[#0B0B0D] p-3">
-                                <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#5EEAD4]">Source references</p>
-                                <p className="mt-1.5 text-xs leading-5 text-[#71717A]">Exact passages and page links will appear here when retrieval is connected.</p>
-                              </div>
+                              <StreamingMarkdown streaming={isStreamingMessage}>
+                                {text}
+                              </StreamingMarkdown>
+                              {sources.length ? (
+                                <div className="mt-4 rounded-lg border border-white/8 bg-[#0B0B0D] p-3">
+                                  <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#5EEAD4]">Sources</p>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {sources.map((source) => (
+                                      <Link
+                                        key={source.id}
+                                        href={`/workspace/documents/${source.documentId}`}
+                                        className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.025] px-2.5 py-1.5 text-[11px] text-[#A1A1AA] transition-colors hover:border-[#2DD4BF]/30 hover:text-white"
+                                      >
+                                        <span className="font-mono text-[#5EEAD4]">[{source.id}]</span>
+                                        <span className="max-w-48 truncate">{source.documentName}</span>
+                                        {source.pageStart ? (
+                                          <span className="shrink-0 text-[#5E5E66]">
+                                            p. {source.pageStart}
+                                            {source.pageEnd && source.pageEnd !== source.pageStart
+                                              ? `-${source.pageEnd}`
+                                              : ""}
+                                          </span>
+                                        ) : null}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           </div>
                         ) : (
-                          <p className="rounded-xl bg-[#18181B] px-4 py-3 text-sm leading-6 text-[#F4F4F5]">{message.content}</p>
+                          <p className="rounded-xl bg-[#18181B] px-4 py-3 text-sm leading-6 text-[#F4F4F5]">{text}</p>
                         )}
                       </article>
-                    ))}
-                    {isResponding ? (
+                    )})}
+                    {status === "submitted" ? (
                       <div className="grid grid-cols-[2rem_1fr] gap-3">
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2DD4BF]/10 text-[#5EEAD4]"><Sparkle className="h-3.5 w-3.5" weight="fill" /></span>
-                        <div className="space-y-2 pt-1" aria-label="Nexus is preparing a response">
-                          <div className="h-2.5 w-4/5 animate-pulse rounded bg-white/8" />
-                          <div className="h-2.5 w-3/5 animate-pulse rounded bg-white/6" />
+                        <div className="pt-1" aria-live="polite">
+                          <p className="text-sm font-medium text-[#D4D4D8]">
+                            Searching selected documents
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-[#71717A]">
+                            Building grounded context before the first words
+                            arrive.
+                          </p>
+                          <div className="mt-3 h-0.5 w-28 animate-pulse rounded bg-[#2DD4BF]/45" />
                         </div>
                       </div>
                     ) : null}
+                    <div ref={messagesEndRef} />
                   </div>
                 </div>
               )}
 
               <div className="sticky bottom-0 bg-[linear-gradient(to_top,#050505_82%,transparent)] pb-5 pt-8">
                 <form onSubmit={submit} className="mx-auto max-w-3xl">
+                  {error ? (
+                    <div role="alert" className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-red-400/15 bg-red-400/[0.05] px-3 py-2.5 text-xs leading-5 text-red-200">
+                      <span>{error.message}</span>
+                      <button type="button" onClick={clearError} className="shrink-0 text-red-300 hover:text-white" aria-label="Dismiss error">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : null}
                   {selectedIds.length === 0 ? (
                     <button type="button" onClick={() => setSelectorOpen(true)} className="mb-2 text-xs font-medium text-amber-300 hover:text-amber-200">Select at least one document to continue</button>
                   ) : null}
                   <div className="rounded-xl border border-white/12 bg-[#111113] p-2 shadow-[0_18px_60px_rgba(0,0,0,0.35)] focus-within:border-[#2DD4BF]/45">
                     <label htmlFor="nexus-question" className="sr-only">Ask a question about selected documents</label>
-                    <textarea id="nexus-question" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} rows={2} placeholder="Ask a question about your documents" className="max-h-40 min-h-14 w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-white outline-none placeholder:text-[#5E5E66]" />
+                    <textarea id="nexus-question" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(); } }} rows={2} placeholder="Ask a question about your documents" className="max-h-40 min-h-14 w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-white outline-none placeholder:text-[#5E5E66]" />
                     <div className="flex items-center justify-between gap-3 px-1 pb-1">
                       <button type="button" onClick={() => setSelectorOpen(true)} className="inline-flex h-8 items-center gap-2 rounded-md px-2 text-xs text-[#8B8B95] hover:bg-white/5 hover:text-white">
                         <FileText className="h-3.5 w-3.5" />
                         {selectedIds.length} selected
                       </button>
-                      <button type="submit" disabled={!draft.trim() || selectedIds.length === 0 || isResponding} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2DD4BF] text-[#04100E] transition-colors hover:bg-[#5EEAD4] active:translate-y-px disabled:cursor-not-allowed disabled:bg-[#263B38] disabled:text-[#718984]" aria-label="Send question">
-                        <ArrowUp className="h-4 w-4" weight="bold" />
-                      </button>
+                      {isResponding ? (
+                        <button type="button" onClick={stop} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E4E4E7] text-[#09090B] hover:bg-white active:translate-y-px" aria-label="Stop response">
+                          <X className="h-4 w-4" weight="bold" />
+                        </button>
+                      ) : (
+                        <button type="submit" disabled={!draft.trim() || selectedIds.length === 0} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2DD4BF] text-[#04100E] transition-colors hover:bg-[#5EEAD4] active:translate-y-px disabled:cursor-not-allowed disabled:bg-[#263B38] disabled:text-[#718984]" aria-label="Send question">
+                          <ArrowUp className="h-4 w-4" weight="bold" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <p className="mt-2 text-center text-[10px] text-[#52525B]">Answers should be verified against the cited source passages.</p>
@@ -299,7 +491,19 @@ function DocumentPicker({ documents, selectedIds, onToggle, compact = false }: {
   );
 }
 
-function AskNav({ documentCount }: { documentCount: number }) {
+function AskNav({
+  documentCount,
+  conversations,
+  activeConversationId,
+  loadingConversationId,
+  onSelectConversation,
+}: {
+  documentCount: number;
+  conversations: ConversationSummary[];
+  activeConversationId: string | null;
+  loadingConversationId: string | null;
+  onSelectConversation: (id: string) => void;
+}) {
   return (
     <>
       <Link href="/" className="flex w-fit items-center gap-2.5 px-2" aria-label="NexusOps home">
@@ -310,6 +514,38 @@ function AskNav({ documentCount }: { documentCount: number }) {
         <Link href="/workspace" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"><House className="h-4 w-4" />Overview</Link>
         <Link href="/workspace/documents" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"><FileText className="h-4 w-4" />Documents</Link>
         <Link href="/workspace/ask" aria-current="page" className="flex items-center gap-3 rounded-lg bg-[#2DD4BF]/10 px-3 py-2.5 text-sm text-[#5EEAD4]"><ChatCenteredDots className="h-4 w-4" weight="fill" />Ask Nexus</Link>
+        <div className="ml-5 mt-2 border-l border-white/8 pl-3">
+          {conversations.length > 0 ? (
+            <div className="space-y-0.5">
+              {conversations.slice(0, 8).map((conversation) => {
+                const active = conversation.id === activeConversationId;
+                const loading = conversation.id === loadingConversationId;
+
+                return (
+                  <button
+                    key={conversation.id}
+                    type="button"
+                    onClick={() => onSelectConversation(conversation.id)}
+                    disabled={loading}
+                    aria-current={active ? "page" : undefined}
+                    title={conversation.title}
+                    className={`block w-full truncate rounded-md px-2 py-1.5 text-left text-xs transition-colors active:translate-y-px disabled:cursor-wait ${
+                      active
+                        ? "bg-white/[0.055] text-[#E4E4E7]"
+                        : "text-[#71717A] hover:bg-white/[0.035] hover:text-[#D4D4D8]"
+                    } ${loading ? "animate-pulse" : ""}`}
+                  >
+                    {conversation.title}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="px-2 py-2 text-[11px] leading-4 text-[#52525B]">
+              Your recent conversations will appear here.
+            </p>
+          )}
+        </div>
       </nav>
       <div className="mt-auto rounded-xl border border-white/8 bg-[#0D0D0F] p-4">
         <Sparkle className="h-4 w-4 text-[#5EEAD4]" />

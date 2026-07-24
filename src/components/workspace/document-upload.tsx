@@ -29,6 +29,31 @@ type DocumentUploadProps = {
   showHeader?: boolean;
 };
 
+async function ensureProcessingStarted(document: WorkspaceDocument) {
+  try {
+    const response = await fetch(`/api/documents/${document.id}`, {
+      method: "POST",
+    });
+
+    // The upload route also schedules processing. A conflict here means that
+    // worker won the claim before this reliability fallback reached the API.
+    if (response.ok || response.status === 409) return;
+
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
+    toast.error("Processing did not start", {
+      description:
+        payload.error ||
+        `Open ${document.originalName} and use Restart processing.`,
+    });
+  } catch {
+    toast.error("Processing connection interrupted", {
+      description: `Open ${document.originalName} and use Restart processing.`,
+    });
+  }
+}
+
 export function DocumentUpload({ onUploaded, showHeader = true }: DocumentUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -81,8 +106,10 @@ export function DocumentUpload({ onUploaded, showHeader = true }: DocumentUpload
     request.onload = () => {
       setIsUploading(false);
       if (request.status >= 200 && request.status < 300 && request.response?.document) {
+        const uploadedDocument = request.response.document as WorkspaceDocument;
         setProgress(100);
-        onUploaded(request.response.document as WorkspaceDocument);
+        void ensureProcessingStarted(uploadedDocument);
+        onUploaded(uploadedDocument);
         toast.success("Document uploaded", {
           description: `${selectedFile.name} was added to your workspace.`,
         });

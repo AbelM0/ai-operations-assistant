@@ -79,6 +79,7 @@ model Document {
   ocrEngine  String?
 
   fileHash String? @unique
+  tags     String[] @default([])
 
   errorMessage String?
 
@@ -92,6 +93,7 @@ model Document {
   chunks         DocumentChunk[]
   summaries      DocumentSummary[]
   conversations  Conversation[]
+  conversationDocuments ConversationDocument[]
   expenseEntries ExpenseEntry[]
   aiJobs         AIJob[]
 
@@ -177,10 +179,25 @@ model Conversation {
   updatedAt DateTime @updatedAt
 
   messages Message[]
+  documents ConversationDocument[]
 
   @@index([userId])
   @@index([documentId])
   @@map("conversations")
+}
+
+model ConversationDocument {
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  documentId String   @db.Uuid
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([conversationId, documentId])
+  @@index([documentId])
+  @@map("conversation_documents")
 }
 
 // =========================================================
@@ -235,6 +252,8 @@ model MessageSource {
   chunk   DocumentChunk @relation(fields: [chunkId], references: [id], onDelete: Cascade)
 
   similarity Float?
+  sourceId   String?
+  sourceOrder Int?
 
   @@index([messageId])
   @@index([chunkId])
