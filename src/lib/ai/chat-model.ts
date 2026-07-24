@@ -2,16 +2,21 @@ import "server-only";
 
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-function createCompatibleModel({
+type ProviderName = "openai" | "deepseek";
+
+const clients = new Map<
+  string,
+  ReturnType<typeof createOpenAICompatible>
+>();
+
+function getCompatibleClient({
   provider,
   apiKey,
   baseURL,
-  modelId,
 }: {
-  provider: "openai" | "deepseek";
+  provider: ProviderName;
   apiKey: string | undefined;
   baseURL: string;
-  modelId: string;
 }) {
   if (!apiKey) {
     throw new Error(
@@ -19,17 +24,49 @@ function createCompatibleModel({
     );
   }
 
+  const normalizedBaseURL = baseURL.replace(/\/$/, "");
+  const cacheKey = `${provider}:${normalizedBaseURL}`;
+  const cached = clients.get(cacheKey);
+  if (cached) return cached;
+
   const client = createOpenAICompatible({
     name: provider,
     apiKey,
-    baseURL: baseURL.replace(/\/$/, ""),
+    baseURL: normalizedBaseURL,
     includeUsage: true,
   });
+  clients.set(cacheKey, client);
+  return client;
+}
+
+function createCompatibleModel({
+  provider,
+  apiKey,
+  baseURL,
+  modelId,
+}: {
+  provider: ProviderName;
+  apiKey: string | undefined;
+  baseURL: string;
+  modelId: string;
+}) {
+  const client = getCompatibleClient({ provider, apiKey, baseURL });
+  const providerOptions =
+    provider === "deepseek" && modelId.startsWith("deepseek-v4-")
+      ? {
+          deepseek: {
+            // DeepSeek V4 otherwise streams a long hidden reasoning pass
+            // before it begins emitting user-visible answer tokens.
+            thinking: { type: "disabled" },
+          },
+        }
+      : undefined;
 
   return {
-    model: client(modelId),
+    model: client.chatModel(modelId),
     modelId,
     provider,
+    providerOptions,
   };
 }
 
@@ -65,4 +102,20 @@ export function getDeepSeekModel(modelId: string) {
     baseURL: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com",
     modelId,
   });
+}
+
+export function getOpenAIEmbeddingModel() {
+  const modelId =
+    process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
+  const client = getCompatibleClient({
+    provider: "openai",
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
+  });
+
+  return {
+    model: client.embeddingModel(modelId),
+    modelId,
+    provider: "openai" as const,
+  };
 }

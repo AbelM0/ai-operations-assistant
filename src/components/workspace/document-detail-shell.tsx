@@ -23,10 +23,14 @@ import {
 import { DefaultChatTransport } from "ai";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StreamingMarkdown } from "@/components/ai/streaming-markdown";
 import type { SummaryModelOption } from "@/lib/ai/models";
+import type {
+  AIProgress,
+  SummaryUIMessage,
+} from "@/lib/ai/stream-types";
 import type { WorkspaceDocumentDetail } from "@/lib/documents/types";
 import {
   Dialog,
@@ -82,6 +86,9 @@ export function DocumentDetailShell({
   const [isRetrying, setIsRetrying] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [summaryProgress, setSummaryProgress] =
+    useState<AIProgress | null>(null);
+  const summaryScrollRef = useRef<HTMLDivElement | null>(null);
   const summaryTransport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -97,10 +104,15 @@ export function DocumentDetailShell({
     stop: stopSummary,
     setMessages: setSummaryMessages,
     clearError: clearSummaryError,
-  } = useChat({
+  } = useChat<SummaryUIMessage>({
     transport: summaryTransport,
-    throttle: 40,
+    onData: (part) => {
+      if (part.type === "data-progress") {
+        setSummaryProgress(part.data);
+      }
+    },
     onFinish: async ({ isAbort, isError }) => {
+      setSummaryProgress(null);
       if (isAbort || isError) return;
 
       try {
@@ -130,6 +142,7 @@ export function DocumentDetailShell({
       }
     },
     onError: (summaryRequestError) => {
+      setSummaryProgress(null);
       toast.error("Summary not generated", {
         description: summaryRequestError.message,
       });
@@ -148,6 +161,21 @@ export function DocumentDetailShell({
         .join("") || ""
     );
   }, [summaryMessages]);
+
+  useEffect(() => {
+    if (summaryStatus !== "streaming" || !streamedSummary) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const container = summaryScrollRef.current;
+      if (!container) return;
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "auto",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [streamedSummary, summaryStatus]);
   const currentSummary =
     document.summaries.find((summary) => summary.id === selectedSummaryId) ||
     document.summaries[0];
@@ -177,6 +205,12 @@ export function DocumentDetailShell({
     if (isSummarizing || document.status !== "READY") return;
     setSummaryMessages([]);
     clearSummaryError();
+    setSummaryProgress({
+      stage: "retrieving",
+      label: "Opening live summary",
+      detail: "Connecting to the document summary stream.",
+    });
+    summaryScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
     void sendSummaryMessage(
       { text: "Generate a comprehensive summary of this document." },
       { body: { model: selectedModel } },
@@ -570,7 +604,10 @@ export function DocumentDetailShell({
                       ) : null}
                     </div>
                   </div>
-                  <div className="max-h-[66dvh] overflow-y-auto p-5 sm:p-7 lg:px-9">
+                  <div
+                    ref={summaryScrollRef}
+                    className="max-h-[66dvh] overflow-y-auto p-5 sm:p-7 lg:px-9"
+                  >
                     {summaryError ? (
                       <div
                         role="alert"
@@ -587,14 +624,15 @@ export function DocumentDetailShell({
                         </button>
                       </div>
                     ) : null}
-                    {summaryStatus === "submitted" && !streamedSummary ? (
+                    {isSummarizing && !streamedSummary ? (
                       <div className="mx-auto max-w-3xl py-4" aria-live="polite">
                         <p className="text-sm font-medium text-[#D4D4D8]">
-                          Preparing document context
+                          {summaryProgress?.label ||
+                            "Preparing document context"}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-[#71717A]">
-                          Reading the indexed pages before the first words
-                          arrive.
+                          {summaryProgress?.detail ||
+                            "Reading the indexed pages before the first words arrive."}
                         </p>
                         <div className="mt-5 space-y-2">
                           <div className="h-2.5 w-4/5 animate-pulse rounded bg-white/8" />

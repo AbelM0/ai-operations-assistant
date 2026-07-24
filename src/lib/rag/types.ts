@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import type { AIProgress } from "@/lib/ai/stream-types";
 
 export type RetrievedChunk = {
   chunkId: string;
@@ -32,6 +33,12 @@ export type BuiltContext = {
 };
 
 export type RagDataParts = {
+  progress: AIProgress;
+  conversation: {
+    conversationId: string;
+    title: string;
+    createdAt: string;
+  };
   sources: {
     conversationId: string;
     title: string;

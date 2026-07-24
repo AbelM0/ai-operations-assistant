@@ -21,9 +21,9 @@ const reveal: Variants = {
 };
 
 const documents = [
-  ["Invoice_1048.pdf", "Processed"],
-  ["Q2_receipts.zip", "12 files"],
-  ["Supplier_contract.pdf", "Indexed"],
+  ["Supplier_contract.pdf", "Ready"],
+  ["Q2_receipt.jpg", "Ready"],
+  ["Operations_report.pdf", "Ready"],
 ];
 
 export function Hero() {
@@ -43,15 +43,15 @@ export function Hero() {
       </div>
       <div className="nexus-grid pointer-events-none absolute inset-0 opacity-40" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center text-center">
+      <div className="relative z-10 mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center text-center">
         <motion.p
           variants={reveal}
           initial="hidden"
           animate="visible"
           custom={0.12}
-          className="mb-7 font-mono text-[11px] font-semibold uppercase tracking-[0.26em] text-[#5EEAD4]"
+          className="mb-7 max-w-full text-balance font-mono text-[10px] font-semibold uppercase leading-5 tracking-[0.2em] text-[#5EEAD4] sm:text-[11px] sm:tracking-[0.26em]"
         >
-          Business intelligence for teams that move
+          Private document intelligence
         </motion.p>
 
         <motion.h1
@@ -59,20 +59,21 @@ export function Hero() {
           initial="hidden"
           animate="visible"
           custom={0.2}
-          className="max-w-6xl text-balance text-[clamp(2.7rem,7.1vw,7.2rem)] font-medium leading-[0.94] tracking-[-0.055em] text-white"
+          className="w-full max-w-[calc(100vw-2.5rem)] text-balance text-[clamp(2.2rem,7.1vw,7.2rem)] font-medium leading-[0.96] tracking-[-0.055em] text-white sm:max-w-6xl sm:leading-[0.94]"
         >
-          Turn documents{" "}
+          Ask your documents.
+          <br className="sm:hidden" />{" "}
           <motion.span
             aria-hidden="true"
             animate={{ backgroundPosition: ["18% 50%", "82% 50%", "18% 50%"] }}
             transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="mx-[0.08em] inline-block h-[0.56em] w-[1.18em] rounded-full border border-white/15 bg-cover align-[0.02em] grayscale"
+            className="mx-[0.08em] hidden h-[0.56em] w-[1.18em] rounded-full border border-white/15 bg-cover align-[0.02em] grayscale sm:inline-block"
             style={{
               backgroundImage:
                 "linear-gradient(rgba(45,212,191,0.14),rgba(45,212,191,0.14)),url(https://picsum.photos/seed/nexus-operations/480/240)",
             }}
           />{" "}
-          into clear decisions.
+          Keep the evidence close.
         </motion.h1>
 
         <motion.p
@@ -80,11 +81,11 @@ export function Hero() {
           initial="hidden"
           animate="visible"
           custom={0.3}
-          className="mt-8 max-w-2xl text-pretty text-base leading-7 text-[#A1A1AA] sm:text-lg"
+          className="mt-8 w-full max-w-[calc(100vw-2.5rem)] text-pretty text-sm leading-6 text-[#A1A1AA] sm:max-w-2xl sm:text-lg sm:leading-7"
         >
-          Nexus reads invoices, receipts, and business records, then gives your
-          team trusted answers, expense insights, and instant summaries in
-          English or Amharic.
+          Upload PDFs and scanned images, review streamed summaries, then ask
+          questions across the sources you choose. Nexus keeps every answer
+          grounded in your workspace.
         </motion.p>
 
         <motion.div
@@ -140,8 +141,8 @@ export function Hero() {
                 </span>
               </div>
               <div className="hidden items-center gap-4 font-mono text-[10px] text-[#52525B] sm:flex">
-                <span>EN / አማ</span>
-                <span>SECURE SESSION</span>
+                <span>3 SOURCES SELECTED</span>
+                <span>PRIVATE WORKSPACE</span>
               </div>
             </div>
 
@@ -193,7 +194,7 @@ export function Hero() {
                     Drop business files here
                   </p>
                   <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.14em] text-[#52525B]">
-                    PDF, image, spreadsheet
+                    PDF, JPG, PNG, WEBP
                   </p>
                 </div>
               </div>
@@ -205,10 +206,10 @@ export function Hero() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">
-                      Operations analyst
+                      Ask Nexus
                     </p>
                     <p className="mt-0.5 text-xs text-[#71717A]">
-                      Grounded in 148 workspace documents
+                      Grounded in the 3 documents you selected
                     </p>
                   </div>
                 </div>
@@ -220,7 +221,7 @@ export function Hero() {
                     transition={{ delay: 1.15, duration: 0.55 }}
                     className="ml-auto max-w-[88%] rounded-xl rounded-br-sm bg-white px-4 py-3 text-sm leading-6 text-[#09090B]"
                   >
-                    Which supplier costs increased the most this quarter?
+                    Summarize the main obligations in these documents.
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
@@ -229,26 +230,19 @@ export function Hero() {
                     className="mt-4 max-w-[92%] rounded-xl rounded-bl-sm border border-[#2DD4BF]/15 bg-[#101817] px-4 py-4"
                   >
                     <p className="text-sm leading-6 text-[#D4D4D8]">
-                      Packaging costs from Abeba Supply rose 18.4%, driven by
-                      three higher-volume orders in May.
+                      The documents establish three main obligations: monthly
+                      delivery reporting [S1], payment within 30 days [S2], and
+                      written notice before schedule changes [S3].
                     </p>
-                    <div
-                      className="mt-4 flex items-end gap-1.5"
-                      aria-hidden="true"
-                    >
-                      {[34, 48, 44, 68, 58, 82, 76, 100].map(
-                        (height, index) => (
-                          <motion.span
-                            key={index}
-                            initial={{ height: 0 }}
-                            animate={{ height }}
-                            transition={{
-                              delay: 1.6 + index * 0.05,
-                              duration: 0.45,
-                            }}
-                            className="w-full max-w-8 rounded-sm bg-[#2DD4BF]/70"
-                            style={{ height: `${height * 0.38}px` }}
-                          />
+                    <div className="mt-4 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.1em] text-[#5EEAD4]">
+                      {["S1 · page 4", "S2 · page 7", "S3 · page 11"].map(
+                        (source) => (
+                          <span
+                            key={source}
+                            className="rounded-md border border-[#2DD4BF]/20 px-2 py-1"
+                          >
+                            {source}
+                          </span>
                         ),
                       )}
                     </div>
@@ -258,7 +252,7 @@ export function Hero() {
                 <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-[#0D0D0F] px-4 py-3 text-[#71717A]">
                   <MagnifyingGlass className="h-4 w-4" />
                   <span className="text-xs">
-                    Ask about cash flow, vendors, or any document…
+                    Ask a follow-up about the selected documents…
                   </span>
                 </div>
               </div>

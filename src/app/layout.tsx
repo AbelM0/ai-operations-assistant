@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Operations Assistant — Intelligent Document Processing for SMEs",
+  title: "NexusOps — Ask questions across your business documents",
   description:
-    "Upload invoices, receipts, and business documents. Ask questions in English or Amharic. Get instant AI-powered insights for your Ethiopian business.",
+    "Upload PDFs and scanned images, generate streamed summaries, and ask source-grounded questions across selected documents.",
 };
 
 export default function RootLayout({

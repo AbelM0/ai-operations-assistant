@@ -9,7 +9,7 @@ import Link from "next/link";
 const navLinks = [
   { href: "#features", label: "Capabilities" },
   { href: "#workflow", label: "Workflow" },
-  { href: "#customers", label: "Customers" },
+  { href: "#product", label: "Inside Nexus" },
 ];
 
 export function Navbar() {
@@ -42,7 +42,7 @@ export function Navbar() {
             : "rgba(255, 255, 255, 0.1)",
         }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="flex w-full max-w-7xl items-center justify-between rounded-xl border px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:px-5"
+        className="flex w-[calc(100vw-1.5rem)] min-w-0 max-w-7xl items-center justify-between rounded-xl border px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:w-full sm:px-5"
       >
         <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Nexus home">
           <motion.span
@@ -93,7 +93,7 @@ export function Navbar() {
               <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }}>
                 <Link
                   href="/sign-in"
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-[#D4D4D8] sm:px-4"
+                  className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#D4D4D8] sm:block sm:px-4"
                 >
                   Log in
                 </Link>
@@ -106,7 +106,8 @@ export function Navbar() {
                   href="/sign-up"
                   className="block rounded-lg bg-[#2DD4BF] px-3 py-2 text-sm font-semibold text-[#04100E] sm:px-4"
                 >
-                  Start free
+                  <span className="sm:hidden">Start</span>
+                  <span className="hidden sm:inline">Start free</span>
                 </Link>
               </motion.div>
             </>

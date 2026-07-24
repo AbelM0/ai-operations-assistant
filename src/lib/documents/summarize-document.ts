@@ -1,8 +1,11 @@
 import "server-only";
 
-import { createDeepSeekCompletion } from "@/lib/ai/deepseek";
+import { streamText } from "ai";
+import { getDeepSeekModel } from "@/lib/ai/chat-model";
 
-const MAX_BATCH_CHARACTERS = 72_000;
+// A 27-page text PDF is usually well below this limit. Sending it directly
+// avoids a blocking map-reduce pass before the user-visible stream begins.
+const MAX_BATCH_CHARACTERS = 280_000;
 
 type Chunk = { pageNumber: number | null; textContent: string };
 
@@ -35,9 +38,14 @@ Rules:
 7. Omit unsupported sections and never invent missing information.
 8. Return the summary itself, without a preamble or fenced Markdown block.`;
 
-export async function prepareDocumentSummary(chunks: Chunk[], model: string) {
+export async function prepareDocumentSummary(
+  chunks: Chunk[],
+  model: string,
+  abortSignal?: AbortSignal,
+) {
   const batches = buildBatches(chunks);
   if (batches.length === 0) throw new Error("This document has no extracted text to summarize.");
+  const summaryModel = getDeepSeekModel(model);
 
   const priorUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
   const addUsage = (next: typeof priorUsage) => {
@@ -55,13 +63,27 @@ export async function prepareDocumentSummary(chunks: Chunk[], model: string) {
 
   const partialSummaries: string[] = [];
   for (let index = 0; index < batches.length; index += 1) {
-    const result = await createDeepSeekCompletion({
-      model,
+    // streamText is also used for the compression pass. Awaiting `.text`
+    // consumes the SDK stream without maintaining a second HTTP client.
+    const result = streamText({
+      model: summaryModel.model,
       system: summarySystemPrompt,
-      user: `This is part ${index + 1} of ${batches.length} of one document. Produce a factual intermediate summary that retains details needed for a final whole-document summary.\n${batches[index]}`,
+      prompt: `This is part ${index + 1} of ${batches.length} of one document. Produce a factual intermediate summary that retains details needed for a final whole-document summary.\n${batches[index]}`,
+      temperature: 0.1,
+      maxOutputTokens: 7_000,
+      providerOptions: summaryModel.providerOptions,
+      abortSignal,
     });
-    partialSummaries.push(`## Part ${index + 1}\n${result.content}`);
-    addUsage(result.usage);
+    const [content, usage] = await Promise.all([result.text, result.usage]);
+    if (!content.trim()) {
+      throw new Error(`The model returned an empty summary for part ${index + 1}.`);
+    }
+    partialSummaries.push(`## Part ${index + 1}\n${content.trim()}`);
+    addUsage({
+      promptTokens: usage.inputTokens || 0,
+      completionTokens: usage.outputTokens || 0,
+      totalTokens: usage.totalTokens || 0,
+    });
   }
 
   return {

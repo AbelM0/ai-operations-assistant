@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { motion, type Variants } from "motion/react";
 import {
-  ChartBar,
   ChatText,
   FileText,
   Scan,
   ShieldCheck,
-  Translate,
+  Sparkle,
 } from "@phosphor-icons/react";
 
 const container: Variants = {
@@ -29,28 +28,28 @@ const item: Variants = {
 
 const workflowPanels = [
   {
-    title: "Capture",
-    description: "Upload scans, photos, PDFs, and spreadsheets in one secure stream.",
+    title: "Upload",
+    description: "Add a PDF or scanned image to your private workspace.",
     icon: Scan,
-    detail: "OCR cleans and structures every file automatically.",
+    detail: "Nexus extracts text, preserves page context, and prepares the source for search.",
   },
   {
-    title: "Understand",
-    description: "Ask direct questions across every file your team has uploaded.",
-    icon: ChatText,
-    detail: "Every answer links back to its supporting source.",
-  },
-  {
-    title: "Organize",
-    description: "Extract vendors, dates, totals, categories, and recurring costs.",
+    title: "Review",
+    description: "Preview the file and generate a readable document summary.",
     icon: FileText,
-    detail: "Consistent records without repetitive data entry.",
+    detail: "Long documents are compressed in stages and the final summary streams as it is written.",
   },
   {
-    title: "Decide",
-    description: "Turn activity into summaries your team can use immediately.",
-    icon: ChartBar,
-    detail: "See exceptions and trends before they become surprises.",
+    title: "Ask",
+    description: "Choose exactly which ready documents Nexus can use.",
+    icon: Sparkle,
+    detail: "Semantic and keyword retrieval find relevant passages before the answer begins.",
+  },
+  {
+    title: "Continue",
+    description: "Return to saved conversations without losing document context.",
+    icon: ChatText,
+    detail: "Add or remove sources during a chat and keep every response tied to citations.",
   },
 ];
 
@@ -66,11 +65,11 @@ function SectionIntro() {
       <h2 className="max-w-3xl text-balance text-[clamp(2.5rem,5vw,5rem)] font-medium leading-[0.98] tracking-[-0.045em] text-white">
         Less document work.
         <br />
-        More operational clarity.
+        More verifiable answers.
       </h2>
       <p className="max-w-sm text-pretty text-sm leading-6 text-[#A1A1AA] sm:text-base">
-        One workspace connects document intake, bilingual AI, financial extraction,
-        and source-backed answers.
+        One workspace connects document processing, streamed summaries,
+        selected-source chat, citations, and conversation history.
       </p>
     </motion.div>
   );
@@ -88,15 +87,15 @@ function UploadCard() {
           <Scan className="h-5 w-5" />
         </span>
         <div>
-          <h3 className="text-xl font-medium tracking-[-0.02em] text-white">Every file becomes usable data</h3>
+          <h3 className="text-xl font-medium tracking-[-0.02em] text-white">Scanned files become searchable sources</h3>
           <p className="mt-3 text-sm leading-6 text-[#A1A1AA]">
-            Clean OCR and structured extraction turn receipts, invoices, and scans
-            into records your whole team can search.
+            Nexus processes PDFs and images, tracks document status, and keeps
+            page references available for retrieval.
           </p>
         </div>
       </div>
       <div className="mt-10 grid gap-2 sm:grid-cols-3">
-        {["Receipt_008.jpg", "Invoice_391.pdf", "Stock_log.xlsx"].map((file, index) => (
+        {["Receipt_008.jpg", "Invoice_391.pdf", "Policy_scan.png"].map((file, index) => (
           <motion.div
             key={file}
             whileHover={{ y: -4, backgroundColor: "rgba(45,212,191,0.08)" }}
@@ -123,66 +122,74 @@ function UploadCard() {
   );
 }
 
-function LanguageCard() {
+function SummaryCard() {
   return (
     <motion.article
       variants={item}
       whileHover={{ y: -7, borderColor: "rgba(45,212,191,0.28)" }}
       className="relative overflow-hidden rounded-xl border border-white/8 bg-[#151517] p-6 sm:p-8 lg:col-span-5"
     >
-      <Translate className="h-6 w-6 text-[#5EEAD4]" />
+      <FileText className="h-6 w-6 text-[#5EEAD4]" />
       <h3 className="mt-8 max-w-sm text-2xl font-medium leading-tight tracking-[-0.025em] text-white">
-        Work naturally in English and Amharic.
+        Read the document without reading every page.
       </h3>
       <p className="mt-4 max-w-md text-sm leading-6 text-[#A1A1AA]">
-        Ask in either language. Nexus understands context, not just keywords.
+        Generate a structured summary and watch it stream into the document
+        view as the model writes.
       </p>
       <div className="mt-10 space-y-3">
         <motion.div
           whileHover={{ x: 5 }}
           className="ml-auto w-[86%] rounded-lg rounded-br-sm bg-white p-3 text-xs text-[#09090B]"
         >
-          Show me all unpaid supplier invoices.
+          Summarize the main topics and obligations.
         </motion.div>
         <motion.div
           whileHover={{ x: 5 }}
           className="w-[90%] rounded-lg rounded-bl-sm border border-[#2DD4BF]/20 bg-[#0B1513] p-3 text-sm text-[#D4D4D8]"
         >
-          ያልተከፈሉ 6 የአቅራቢ ደረሰኞች አግኝቻለሁ።
+          <strong className="font-medium text-white">Main topics</strong>
+          <br />
+          Reporting duties, payment terms, and termination conditions…
         </motion.div>
       </div>
     </motion.article>
   );
 }
 
-function InsightCard() {
-  const bars = [42, 58, 51, 76, 62, 88, 73, 96];
+function ConversationCard() {
   return (
     <motion.article
       variants={item}
       whileHover={{ y: -7, borderColor: "rgba(45,212,191,0.28)" }}
       className="relative overflow-hidden rounded-xl border border-white/8 bg-[#151517] p-6 sm:p-8 lg:col-span-5"
     >
-      <ChartBar className="h-6 w-6 text-[#5EEAD4]" />
-      <h3 className="mt-8 text-2xl font-medium tracking-[-0.025em] text-white">Know what changed, and why.</h3>
+      <ChatText className="h-6 w-6 text-[#5EEAD4]" />
+      <h3 className="mt-8 text-2xl font-medium tracking-[-0.025em] text-white">Continue where the question left off.</h3>
       <p className="mt-4 text-sm leading-6 text-[#A1A1AA]">
-        Automatic summaries surface cost shifts, vendor trends, and unusual activity.
+        Saved conversation history keeps previous answers and source selections
+        within reach.
       </p>
       <div className="mt-9 rounded-lg border border-white/8 bg-[#09090B] p-5">
-        <div className="flex items-center justify-between">
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#71717A]">Operating spend</span>
-          <span className="text-xs text-[#5EEAD4]">+12.8%</span>
-        </div>
-        <div className="mt-6 flex h-24 items-end gap-2">
-          {bars.map((height, index) => (
-            <motion.span
-              key={index}
-              initial={{ height: 0 }}
-              whileInView={{ height: `${height}%` }}
+        <div className="space-y-2">
+          {[
+            ["Contract obligations", "3 sources"],
+            ["Q2 report summary", "1 source"],
+            ["Supplier payment terms", "4 sources"],
+          ].map(([title, sources], index) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.12 + index * 0.06, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full rounded-sm bg-[#2DD4BF]/65"
-            />
+              transition={{ delay: index * 0.08 }}
+              className="flex items-center justify-between rounded-md bg-white/[0.035] px-3 py-2.5"
+            >
+              <span className="truncate text-xs text-[#D4D4D8]">{title}</span>
+              <span className="ml-3 font-mono text-[9px] uppercase tracking-[0.1em] text-[#5E5E66]">
+                {sources}
+              </span>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -207,7 +214,7 @@ function TrustCard() {
           </p>
         </div>
         <div className="space-y-2">
-          {["Encrypted storage", "Workspace isolation", "Source citations"].map((label) => (
+          {["User-isolated retrieval", "Selected-source context", "Page-aware citations"].map((label) => (
             <motion.div
               key={label}
               whileHover={{ x: 5, borderColor: "rgba(45,212,191,0.24)" }}
@@ -239,7 +246,7 @@ function WorkflowAccordion() {
           One connected workflow.
         </h3>
         <p className="max-w-sm text-sm leading-6 text-[#71717A]">
-          From raw file to informed action without switching tools.
+          From raw file to a saved, source-grounded conversation.
         </p>
       </motion.div>
 
@@ -310,8 +317,8 @@ export function FeaturesBento() {
           className="grid grid-flow-dense grid-cols-1 gap-3 lg:grid-cols-12"
         >
           <UploadCard />
-          <LanguageCard />
-          <InsightCard />
+          <SummaryCard />
+          <ConversationCard />
           <TrustCard />
         </motion.div>
         <WorkflowAccordion />

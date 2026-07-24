@@ -4,13 +4,13 @@ import { motion } from "motion/react";
 
 const tags = [
   "Document OCR",
-  "Expense intelligence",
+  "Selected-source chat",
   "Source-backed answers",
-  "Amharic support",
-  "Secure storage",
-  "Vendor analysis",
+  "Conversation history",
+  "Hybrid retrieval",
+  "Page-aware citations",
   "Automatic summaries",
-  "Bilingual AI",
+  "Live response streaming",
 ];
 
 function MarqueeRow({ reverse = false }: { reverse?: boolean }) {

@@ -1,9 +1,9 @@
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
-  generateText,
   smoothStream,
   streamText,
+  toUIMessageStream,
 } from "ai";
 import { getChatModel } from "@/lib/ai/chat-model";
 import { requireAppUser } from "@/lib/auth/require-app-user";
@@ -36,7 +36,9 @@ const MAX_QUERY_CHARACTERS = 4_000;
 const MAX_DOCUMENT_FILTERS = 50;
 const MAX_TAG_FILTERS = 20;
 const MAX_HISTORY_MESSAGES = 10;
-const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
+const DEFAULT_MAX_OUTPUT_TOKENS = 7_000;
+const MIN_MAX_OUTPUT_TOKENS = 1_000;
+const ABSOLUTE_MAX_OUTPUT_TOKENS = 8_000;
 
 const SYSTEM_PROMPT = `You are Nexus, a document question-answering assistant.
 
@@ -50,14 +52,79 @@ Rules:
 7. For broad analysis or summarization questions, give a thorough, well-structured answer that covers every major supported topic. For narrow questions, stay direct.
 8. Use Markdown headings, lists, tables, and emphasis when they improve readability.`;
 
-function outputTokenLimit() {
+function configuredOutputTokenCeiling() {
   const configured = Number.parseInt(
     process.env.RAG_MAX_OUTPUT_TOKENS || "",
     10,
   );
   return Number.isFinite(configured)
-    ? Math.max(500, Math.min(8_000, configured))
+    ? Math.max(
+        MIN_MAX_OUTPUT_TOKENS,
+        Math.min(ABSOLUTE_MAX_OUTPUT_TOKENS, configured),
+      )
     : DEFAULT_MAX_OUTPUT_TOKENS;
+}
+
+function answerRequirements({
+  query,
+  contextCharacters,
+  sourceCount,
+}: {
+  query: string;
+  contextCharacters: number;
+  sourceCount: number;
+}) {
+  const normalizedQuery = query.toLowerCase().replace(/\s+/g, " ");
+  const asksForBriefAnswer =
+    /\b(briefly|concise|concisely|short answer|one sentence|in a sentence|yes or no)\b/.test(
+      normalizedQuery,
+    );
+  const asksForBroadCoverage =
+    /\b(summar(?:y|ize|ise)|overview|main topics?|key (?:topics?|themes?|points?|findings?)|all (?:topics?|sections?|findings?)|what (?:do|does) .+ cover)\b/.test(
+      normalizedQuery,
+    );
+  const asksForComparison =
+    /\b(compare|comparison|contrast|differences?|similarities|versus|vs\.?|across the documents?|between)\b/.test(
+      normalizedQuery,
+    );
+  const asksForDetail =
+    /\b(detailed|in detail|thorough|thoroughly|comprehensive|deep dive|analy[sz]e|analysis|elaborate|step[- ]by[- ]step|explain fully)\b/.test(
+      normalizedQuery,
+    );
+
+  let requestedTokens = 4_500;
+  let guidance =
+    "Answer directly, then include enough supporting detail from the sources to fully resolve the question.";
+
+  if (asksForBriefAnswer) {
+    requestedTokens = 2_000;
+    guidance =
+      "The user explicitly requested brevity. Give a compact answer with only the most relevant supporting evidence.";
+  } else if (asksForBroadCoverage || asksForDetail) {
+    requestedTokens = 7_000;
+    guidance =
+      "Give a thorough, well-organized answer. Cover every major supported topic, preserve important nuance, and include useful subpoints rather than compressing the response.";
+  } else if (asksForComparison) {
+    requestedTokens = 6_000;
+    guidance =
+      "Give a complete comparison organized by the most useful dimensions. Explain material similarities, differences, and implications supported by the sources.";
+  } else if (
+    sourceCount >= 6 ||
+    contextCharacters >= 24_000 ||
+    normalizedQuery.length >= 300
+  ) {
+    requestedTokens = 5_500;
+    guidance =
+      "The question or retrieved context spans substantial material. Answer directly while covering all relevant supported aspects without over-compressing them.";
+  }
+
+  return {
+    maxOutputTokens: Math.min(
+      requestedTokens,
+      configuredOutputTokenCeiling(),
+    ),
+    guidance,
+  };
 }
 
 function errorResponse(message: string, status: number) {
@@ -256,15 +323,17 @@ async function persistAssistantMessage({
 
     if (isFirstTurn) {
       try {
-        const titleResult = await generateText({
-          model: getChatModel().model,
+        const titleModel = getChatModel();
+        const titleResult = streamText({
+          model: titleModel.model,
           system:
             "You create short, specific conversation titles for a document assistant. Summarize the user's request and the assistant's answer together so the title is useful in a history sidebar. Return only the title, with no quotes, prefix, or trailing punctuation.",
           prompt: `User request:\n${question}\n\nAssistant answer:\n${answer.trim()}`,
           temperature: 0.2,
           maxOutputTokens: 40,
+          providerOptions: titleModel.providerOptions,
         });
-        const title = titleResult.text
+        const title = (await titleResult.text)
           .replace(/^['"`]+|['"`]+$/g, "")
           .replace(/\s+/g, " ")
           .trim()
@@ -335,105 +404,166 @@ export async function POST(request: Request) {
     return errorResponse("Select at least one document or tag.", 400);
   }
 
-  try {
-    await validateDocuments(appUser.id, documentIds);
-    const conversation = await getConversation({
-      conversationId: requestedConversationId,
-      userId: appUser.id,
-      query,
-    });
-    const isFirstTurn = requestedConversationId === null;
-    await syncConversationDocuments(conversation.id, documentIds);
-    const history = await getHistory(conversation.id);
-    const chunks = await retrieveDocumentChunks({
-      query,
-      userId: appUser.id,
-      documentIds,
-      tags,
-    });
-    const context = buildContext(chunks);
-    const { error: userMessageError } = await supabaseAdmin
-      .from("messages")
-      .insert({ conversationId: conversation.id, role: "USER", content: query });
-    if (userMessageError) {
-      throw new Error("The question could not be saved.", { cause: userMessageError });
-    }
-
-    const chatModel = getChatModel();
-    const result = streamText({
-      model: chatModel.model,
-      system: SYSTEM_PROMPT,
-      messages: [
-        ...history.map((message) => ({
-          role:
-            message.role === "USER"
-              ? ("user" as const)
-              : ("assistant" as const),
-          content: message.content,
-        })),
-        {
-          role: "user" as const,
-          content: `SOURCE CONTEXT\n${context.text || "[No matching context was retrieved.]"}\n\nQUESTION\n${query}`,
-        },
-      ],
-      temperature: 0.1,
-      maxOutputTokens: outputTokenLimit(),
-      experimental_transform: smoothStream({
-        delayInMs: 8,
-        chunking: "word",
-      }),
-      abortSignal: request.signal,
-      onEnd: async ({ text, usage }) => {
-        if (!text.trim()) return;
-        await persistAssistantMessage({
-          conversationId: conversation.id,
-          userId: appUser.id,
-          question: query,
-          isFirstTurn,
-          answer: text,
-          sources: context.sources,
-          provider: chatModel.provider,
-          model: chatModel.modelId,
-          usage,
-        });
-      },
-    });
-
-    const stream = createUIMessageStream<RagUIMessage>({
-      execute: ({ writer }) => {
+  const stream = createUIMessageStream<RagUIMessage>({
+    execute: async ({ writer }) => {
+      const writeProgress = (
+        stage: "validating" | "loading" | "retrieving" | "generating",
+        label: string,
+        detail: string,
+      ) => {
         writer.write({
-          type: "data-sources",
-          data: {
-            conversationId: conversation.id,
-            title: conversation.title,
-            createdAt: conversation.createdAt,
-            sources: context.sources,
-          },
+          type: "data-progress",
+          data: { stage, label, detail },
+          transient: true,
         });
-        writer.merge(result.toUIMessageStream({ originalMessages: messages }));
-      },
-      onError: (error) => {
-        console.error(`Chat stream failed for ${conversation.id}`, error);
-        return error instanceof Error
-          ? error.message
-          : "The answer could not be generated.";
-      },
-    });
+      };
 
-    return createUIMessageStreamResponse({
-      stream,
-      headers: {
-        "Cache-Control": "no-cache, no-transform",
-        "X-Accel-Buffering": "no",
-      },
-    });
-  } catch (error) {
-    console.error("Document chat request failed", error);
-    const message =
-      error instanceof Error ? error.message : "The chat request failed.";
-    return errorResponse(
-      message,
-      message === "Conversation not found." ? 404 : 502,
-    );
-  }
+      writeProgress(
+        "validating",
+        "Checking selected documents",
+        "Confirming that every source is ready and belongs to your workspace.",
+      );
+      await validateDocuments(appUser.id, documentIds);
+
+      writeProgress(
+        "loading",
+        "Loading conversation context",
+        "Preparing the recent messages and selected source set.",
+      );
+      const conversation = await getConversation({
+        conversationId: requestedConversationId,
+        userId: appUser.id,
+        query,
+      });
+      const isFirstTurn = requestedConversationId === null;
+
+      writer.write({
+        type: "data-conversation",
+        data: {
+          conversationId: conversation.id,
+          title: conversation.title,
+          createdAt: conversation.createdAt,
+        },
+        transient: true,
+      });
+
+      writeProgress(
+        "retrieving",
+        "Searching selected documents",
+        "Running semantic and keyword retrieval to build grounded context.",
+      );
+      const [, history, chunks] = await Promise.all([
+        syncConversationDocuments(conversation.id, documentIds),
+        getHistory(conversation.id),
+        retrieveDocumentChunks({
+          query,
+          userId: appUser.id,
+          documentIds,
+          tags,
+        }),
+      ]);
+
+      if (request.signal.aborted) return;
+
+      const context = buildContext(chunks);
+      const { error: userMessageError } = await supabaseAdmin
+        .from("messages")
+        .insert({
+          conversationId: conversation.id,
+          role: "USER",
+          content: query,
+        });
+      if (userMessageError) {
+        throw new Error("The question could not be saved.", {
+          cause: userMessageError,
+        });
+      }
+
+      writer.write({
+        type: "data-sources",
+        data: {
+          conversationId: conversation.id,
+          title: conversation.title,
+          createdAt: conversation.createdAt,
+          sources: context.sources,
+        },
+      });
+      writeProgress(
+        "generating",
+        "Writing grounded answer",
+        `Using ${context.sources.length} retrieved ${context.sources.length === 1 ? "source" : "sources"}.`,
+      );
+
+      const chatModel = getChatModel();
+      const answerPlan = answerRequirements({
+        query,
+        contextCharacters: context.text.length,
+        sourceCount: context.sources.length,
+      });
+      const result = streamText({
+        model: chatModel.model,
+        system: `${SYSTEM_PROMPT}
+
+Answer-length guidance for this request:
+${answerPlan.guidance}`,
+        messages: [
+          ...history.map((message) => ({
+            role:
+              message.role === "USER"
+                ? ("user" as const)
+                : ("assistant" as const),
+            content: message.content,
+          })),
+          {
+            role: "user" as const,
+            content: `SOURCE CONTEXT\n${context.text || "[No matching context was retrieved.]"}\n\nQUESTION\n${query}`,
+          },
+        ],
+        temperature: 0.1,
+        maxOutputTokens: answerPlan.maxOutputTokens,
+        providerOptions: chatModel.providerOptions,
+        experimental_transform: smoothStream({
+          delayInMs: 20,
+          chunking: "word",
+        }),
+        abortSignal: request.signal,
+        onEnd: async ({ text, usage }) => {
+          if (!text.trim()) return;
+          await persistAssistantMessage({
+            conversationId: conversation.id,
+            userId: appUser.id,
+            question: query,
+            isFirstTurn,
+            answer: text,
+            sources: context.sources,
+            provider: chatModel.provider,
+            model: chatModel.modelId,
+            usage,
+          });
+        },
+      });
+
+      writer.merge(
+        toUIMessageStream({
+          stream: result.stream,
+          originalMessages: messages,
+        }),
+      );
+    },
+    onError: (error) => {
+      console.error("Document chat stream failed", error);
+      return error instanceof Error
+        ? error.message
+        : "The answer could not be generated.";
+    },
+  });
+
+  return createUIMessageStreamResponse({
+    stream,
+    headers: {
+      "Cache-Control": "no-cache, no-transform",
+      "Content-Encoding": "none",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

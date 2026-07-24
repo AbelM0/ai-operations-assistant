@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { StreamingMarkdown } from "@/components/ai/streaming-markdown";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { AIProgress } from "@/lib/ai/stream-types";
 import type { WorkspaceDocument } from "@/lib/documents/types";
 import type {
   ConversationDetail,
@@ -60,6 +61,8 @@ export function AskNexusShell({
   >(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
+  const [responseProgress, setResponseProgress] =
+    useState<AIProgress | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -71,9 +74,16 @@ export function AskNexusShell({
     setMessages,
     clearError,
   } = useChat<RagUIMessage>({
-    throttle: 50,
     onData: (part) => {
-      if (part.type === "data-sources") {
+      if (part.type === "data-progress") {
+        setResponseProgress(part.data);
+        return;
+      }
+
+      if (
+        part.type === "data-conversation" ||
+        part.type === "data-sources"
+      ) {
         setConversationId(part.data.conversationId);
         conversationIdRef.current = part.data.conversationId;
         setConversations((current) => {
@@ -93,6 +103,7 @@ export function AskNexusShell({
       }
     },
     onFinish: async () => {
+      setResponseProgress(null);
       const id = conversationIdRef.current;
       if (!id) return;
 
@@ -113,11 +124,24 @@ export function AskNexusShell({
         // The answer is already complete; a title refresh should not interrupt it.
       }
     },
+    onError: () => {
+      setResponseProgress(null);
+    },
   });
   const isResponding = status === "submitted" || status === "streaming";
+  const latestMessage = messages.at(-1);
+  const latestAssistantHasText =
+    latestMessage?.role === "assistant" &&
+    latestMessage.parts.some(
+      (part) => part.type === "text" && Boolean(part.text.trim()),
+    );
+  const showResponseProgress = isResponding && !latestAssistantHasText;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: status === "streaming" ? "auto" : "smooth",
+      block: "end",
+    });
   }, [messages, status]);
 
   const toggleDocument = (id: string) => {
@@ -132,6 +156,11 @@ export function AskNexusShell({
 
     setDraft("");
     clearError();
+    setResponseProgress({
+      stage: "validating",
+      label: "Starting document search",
+      detail: "Opening a live response and checking the selected sources.",
+    });
     void sendMessage(
       { text: question },
       {
@@ -157,6 +186,8 @@ export function AskNexusShell({
     conversationIdRef.current = null;
     setChatStarted(false);
     setHistoryError(null);
+    setResponseProgress(null);
+    setMobileNavOpen(false);
     clearError();
   };
 
@@ -166,6 +197,7 @@ export function AskNexusShell({
     stop();
     clearError();
     setHistoryError(null);
+    setResponseProgress(null);
     setLoadingConversationId(id);
 
     try {
@@ -239,6 +271,7 @@ export function AskNexusShell({
           conversations={conversations}
           activeConversationId={conversationId}
           loadingConversationId={loadingConversationId}
+          onNewChat={startNewChat}
           onSelectConversation={loadConversation}
           onDeleteConversation={deleteConversation}
           deletingConversationId={deletingConversationId}
@@ -257,6 +290,7 @@ export function AskNexusShell({
               conversations={conversations}
               activeConversationId={conversationId}
               loadingConversationId={loadingConversationId}
+              onNewChat={startNewChat}
               onSelectConversation={loadConversation}
               onDeleteConversation={deleteConversation}
               deletingConversationId={deletingConversationId}
@@ -352,6 +386,9 @@ export function AskNexusShell({
                         sourcePart?.type === "data-sources"
                           ? sourcePart.data.sources
                           : [];
+                      if (message.role === "assistant" && !text.trim()) {
+                        return null;
+                      }
                       const isStreamingMessage =
                         status === "streaming" &&
                         message.role === "assistant" &&
@@ -400,16 +437,17 @@ export function AskNexusShell({
                         )}
                       </article>
                     )})}
-                    {status === "submitted" ? (
+                    {showResponseProgress ? (
                       <div className="grid grid-cols-[2rem_1fr] gap-3">
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2DD4BF]/10 text-[#5EEAD4]"><Sparkle className="h-3.5 w-3.5" weight="fill" /></span>
                         <div className="pt-1" aria-live="polite">
                           <p className="text-sm font-medium text-[#D4D4D8]">
-                            Searching selected documents
+                            {responseProgress?.label ||
+                              "Opening live document search"}
                           </p>
                           <p className="mt-1 text-xs leading-5 text-[#71717A]">
-                            Building grounded context before the first words
-                            arrive.
+                            {responseProgress?.detail ||
+                              "Preparing the grounded context before the first words arrive."}
                           </p>
                           <div className="mt-3 h-0.5 w-28 animate-pulse rounded bg-[#2DD4BF]/45" />
                         </div>
@@ -549,6 +587,7 @@ function AskNav({
   conversations,
   activeConversationId,
   loadingConversationId,
+  onNewChat,
   onSelectConversation,
   onDeleteConversation,
   deletingConversationId,
@@ -557,6 +596,7 @@ function AskNav({
   conversations: ConversationSummary[];
   activeConversationId: string | null;
   loadingConversationId: string | null;
+  onNewChat: () => void;
   onSelectConversation: (id: string) => void;
   onDeleteConversation: (id: string) => void;
   deletingConversationId: string | null;
@@ -572,6 +612,14 @@ function AskNav({
         <Link href="/workspace/documents" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"><FileText className="h-4 w-4" />Documents</Link>
         <Link href="/workspace/ask" aria-current="page" className="flex items-center gap-3 rounded-lg bg-[#2DD4BF]/10 px-3 py-2.5 text-sm text-[#5EEAD4]"><ChatCenteredDots className="h-4 w-4" weight="fill" />Ask Nexus</Link>
         <div className="ml-5 mt-2 border-l border-white/8 pl-3">
+          <button
+            type="button"
+            onClick={onNewChat}
+            className="mb-2 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-medium text-[#A1A1AA] transition-colors hover:bg-[#2DD4BF]/8 hover:text-[#5EEAD4] active:translate-y-px focus-visible:outline-2 focus-visible:outline-[#5EEAD4]"
+          >
+            <Plus className="h-3.5 w-3.5" weight="bold" />
+            New chat
+          </button>
           {conversations.length > 0 ? (
             <div className="space-y-0.5">
               {conversations.slice(0, 8).map((conversation) => {

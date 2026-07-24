@@ -7,37 +7,42 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
-import { ChartLineUp, DownloadSimple, Robot } from "@phosphor-icons/react";
+import {
+  ChatCenteredDots,
+  Clock,
+  DownloadSimple,
+  FileText,
+} from "@phosphor-icons/react";
 
 const story = [
   {
-    title: "Capture the messy reality.",
+    title: "Prepare the source.",
     description:
-      "Receipts from phones, multi-page invoices, supplier PDFs, and operational spreadsheets all enter one reliable workspace.",
-    outcome: "Clean, searchable records",
+      "Upload a PDF or image. Nexus extracts its text, keeps page context, and reports when the file is ready to use.",
+    outcome: "A searchable document with visible status",
     icon: DownloadSimple,
     visual: "capture",
   },
   {
-    title: "Ask with full context.",
+    title: "Review without the long wait.",
     description:
-      "Nexus reasons across your selected documents, understands English and Amharic, and points every answer back to the evidence.",
-    outcome: "Answers your team can trust",
-    icon: Robot,
+      "Open the document preview and request a structured summary. Progress appears immediately and the final response streams into view.",
+    outcome: "A readable summary beside the source",
+    icon: FileText,
     visual: "understand",
   },
   {
-    title: "Act before the month ends.",
+    title: "Ask, verify, and return.",
     description:
-      "See changing supplier costs, repeated expenses, and reporting-ready summaries while there is still time to respond.",
-    outcome: "Faster operational decisions",
-    icon: ChartLineUp,
+      "Choose the documents for each conversation, follow inline citations, and continue saved chats from the Ask Nexus history.",
+    outcome: "Answers with continuity and evidence",
+    icon: ChatCenteredDots,
     visual: "act",
   },
 ];
 
 const statement =
-  "Your documents already contain the story of your business. Nexus makes that story searchable, explainable, and ready to act on.";
+  "Your documents should not disappear into storage. Nexus keeps them readable, searchable, and available for questions with evidence attached.";
 
 function ScrubbedWord({
   word,
@@ -93,7 +98,7 @@ function UnderstandVisual() {
         viewport={{ once: true }}
         className="ml-auto max-w-[82%] rounded-lg rounded-br-sm bg-white p-3 text-xs leading-5 text-[#09090B]"
       >
-        Compare fuel expenses across our last three months.
+        What notice period applies before termination?
       </motion.div>
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -102,11 +107,11 @@ function UnderstandVisual() {
         transition={{ delay: 0.16 }}
         className="max-w-[90%] rounded-lg rounded-bl-sm border border-[#2DD4BF]/20 bg-[#0C1715] p-4 text-xs leading-5 text-[#D4D4D8]"
       >
-        Fuel spend decreased 7.2% in June. The largest change came from fewer
-        deliveries on the northern route.
+        The agreement requires 30 days&apos; written notice before termination,
+        except where the breach provisions permit immediate action [S1].
         <div className="mt-3 flex gap-2 font-mono text-[8px] uppercase tracking-[0.12em] text-[#5EEAD4]">
-          <span>3 sources</span>
-          <span>High confidence</span>
+          <span>S1 · page 9</span>
+          <span>Selected source</span>
         </div>
       </motion.div>
     </div>
@@ -114,33 +119,34 @@ function UnderstandVisual() {
 }
 
 function ActVisual() {
-  const points = "0,70 36,62 72,68 108,45 144,52 180,31 216,38 252,16 288,24 324,7";
   return (
-    <div className="flex h-full flex-col justify-between p-5 sm:p-8">
+    <div className="flex h-full flex-col p-5 sm:p-8">
       <div className="flex items-start justify-between">
         <div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#71717A]">Monthly variance</p>
-          <p className="mt-2 text-3xl font-medium tracking-[-0.04em] text-white">−7.2%</p>
+          <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#71717A]">Ask Nexus history</p>
+          <p className="mt-2 text-2xl font-medium tracking-[-0.04em] text-white">Continue the thread</p>
         </div>
-        <span className="rounded-md bg-[#2DD4BF]/10 px-2.5 py-1 font-mono text-[9px] text-[#5EEAD4]">ON TRACK</span>
+        <Clock className="h-5 w-5 text-[#5EEAD4]" />
       </div>
-      <svg viewBox="0 0 324 80" className="mt-8 w-full overflow-visible" aria-hidden="true">
-        <motion.polyline
-          points={points}
-          fill="none"
-          stroke="#2DD4BF"
-          strokeWidth="2"
-          initial={{ pathLength: 0, opacity: 0 }}
-          whileInView={{ pathLength: 1, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </svg>
-      <div className="mt-8 grid grid-cols-3 gap-2">
-        {["6 flags", "24 vendors", "3 actions"].map((metric) => (
-          <div key={metric} className="rounded-md border border-white/8 bg-[#0B0B0D] p-3 text-center text-[10px] text-[#A1A1AA]">
-            {metric}
-          </div>
+      <div className="mt-8 space-y-2">
+        {[
+          ["Contract obligations", "3 selected sources"],
+          ["Quarterly report topics", "2 selected sources"],
+          ["Payment and renewal terms", "4 selected sources"],
+        ].map(([title, detail], index) => (
+          <motion.div
+            key={title}
+            initial={{ opacity: 0, x: -12 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.1 }}
+            className="rounded-lg border border-white/8 bg-[#0B0B0D] px-4 py-3"
+          >
+            <p className="text-xs font-medium text-[#D4D4D8]">{title}</p>
+            <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.1em] text-[#52525B]">
+              {detail}
+            </p>
+          </motion.div>
         ))}
       </div>
     </div>
@@ -222,10 +228,10 @@ export function ScrollShowcase() {
           className="mb-16 flex flex-col justify-between gap-6 md:flex-row md:items-end"
         >
           <h2 className="max-w-3xl text-balance text-[clamp(2.5rem,5vw,5rem)] font-medium leading-[0.98] tracking-[-0.045em] text-white">
-            From scattered files to forward motion.
+            From uploaded file to cited conversation.
           </h2>
           <p className="max-w-xs text-sm leading-6 text-[#71717A]">
-            Three connected moments. One dependable source of truth.
+            Three connected moments, with the source visible throughout.
           </p>
         </motion.div>
 
