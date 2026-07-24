@@ -313,7 +313,7 @@ function DocumentsNav({ documentCount, onUpload }: { documentCount: number; onUp
       <nav aria-label="Workspace navigation" className="mt-10 space-y-1">
         <Link href="/workspace" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] transition-colors hover:bg-white/5 hover:text-white"><House className="h-4 w-4" />Overview</Link>
         <Link href="/workspace/documents" aria-current="page" className="flex items-center gap-3 rounded-lg bg-[#2DD4BF]/10 px-3 py-2.5 text-sm text-[#5EEAD4]"><FileText className="h-4 w-4" weight="fill" />Documents</Link>
-        <button type="button" disabled className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[#52525B]"><ChatCenteredDots className="h-4 w-4" />Ask Nexus</button>
+        <Link href="/workspace/ask" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] transition-colors hover:bg-white/5 hover:text-white"><ChatCenteredDots className="h-4 w-4" />Ask Nexus</Link>
       </nav>
       <div className="mt-auto rounded-xl border border-white/8 bg-[#0D0D0F] p-4">
         <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#5EEAD4]">{documentCount} stored</p>

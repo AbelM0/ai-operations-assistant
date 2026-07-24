@@ -641,14 +641,13 @@ function DetailNav() {
           <FileText className="h-4 w-4" weight="fill" />
           Documents
         </Link>
-        <button
-          type="button"
-          disabled
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#52525B]"
+        <Link
+          href="/workspace/ask"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"
         >
           <ChatCenteredDots className="h-4 w-4" />
           Ask Nexus
-        </button>
+        </Link>
       </nav>
       <div className="mt-auto rounded-xl border border-white/8 bg-[#0D0D0F] p-4">
         <Sparkle className="h-4 w-4 text-[#5EEAD4]" />

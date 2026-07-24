@@ -50,7 +50,7 @@ const guidance = [
 const navItems = [
   { label: "Overview", icon: House, href: "/workspace", active: true },
   { label: "Documents", icon: FileText, href: "/workspace/documents", active: false },
-  { label: "Ask Nexus", icon: ChatCenteredDots, active: false },
+  { label: "Ask Nexus", icon: ChatCenteredDots, href: "/workspace/ask", active: false },
 ];
 
 function formatBytes(bytes: number) {
