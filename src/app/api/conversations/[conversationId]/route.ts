@@ -272,3 +272,32 @@ export async function GET(
 
   return Response.json({ conversation: detail, messages });
 }
+
+export async function DELETE(
+  _request: Request,
+  context: RouteContext<"/api/conversations/[conversationId]">,
+) {
+  const appUser = await requireAppUser();
+  if (!appUser) return errorResponse("Authentication required.", 401);
+
+  const { conversationId } = await context.params;
+  if (!isUuid(conversationId)) {
+    return errorResponse("Conversation not found.", 404);
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("conversations")
+    .delete()
+    .eq("id", conversationId)
+    .eq("userId", appUser.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("Could not delete conversation", error);
+    return errorResponse("The conversation could not be deleted.", 502);
+  }
+  if (!data) return errorResponse("Conversation not found.", 404);
+
+  return new Response(null, { status: 204 });
+}

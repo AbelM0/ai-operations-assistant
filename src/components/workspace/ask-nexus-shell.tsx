@@ -13,6 +13,7 @@ import {
   Plus,
   SidebarSimple,
   Sparkle,
+  Trash,
   X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -58,6 +59,8 @@ export function AskNexusShell({
     string | null
   >(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const {
     messages,
@@ -72,6 +75,7 @@ export function AskNexusShell({
     onData: (part) => {
       if (part.type === "data-sources") {
         setConversationId(part.data.conversationId);
+        conversationIdRef.current = part.data.conversationId;
         setConversations((current) => {
           const nextConversation: ConversationSummary = {
             id: part.data.conversationId,
@@ -86,6 +90,27 @@ export function AskNexusShell({
             ),
           ].slice(0, 12);
         });
+      }
+    },
+    onFinish: async () => {
+      const id = conversationIdRef.current;
+      if (!id) return;
+
+      try {
+        const response = await fetch(`/api/conversations/${id}`, {
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as ConversationResponse;
+        setConversations((current) =>
+          current.map((conversation) =>
+            conversation.id === id
+              ? { ...conversation, title: payload.conversation.title, lastMessageAt: payload.conversation.lastMessageAt }
+              : conversation,
+          ),
+        );
+      } catch {
+        // The answer is already complete; a title refresh should not interrupt it.
       }
     },
   });
@@ -129,6 +154,7 @@ export function AskNexusShell({
     setDraft("");
     setSelectedIds([]);
     setConversationId(null);
+    conversationIdRef.current = null;
     setChatStarted(false);
     setHistoryError(null);
     clearError();
@@ -166,6 +192,7 @@ export function AskNexusShell({
         ),
       );
       setConversationId(payload.conversation.id);
+      conversationIdRef.current = payload.conversation.id;
       setChatStarted(true);
       setDraft("");
       setMobileNavOpen(false);
@@ -180,6 +207,28 @@ export function AskNexusShell({
     }
   };
 
+  const deleteConversation = async (id: string) => {
+    const conversation = conversations.find((item) => item.id === id);
+    if (!conversation || !window.confirm(`Delete “${conversation.title}”? This cannot be undone.`)) return;
+
+    setDeletingConversationId(id);
+    setHistoryError(null);
+    try {
+      const response = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "The conversation could not be deleted.");
+      }
+
+      setConversations((current) => current.filter((item) => item.id !== id));
+      if (conversationId === id) startNewChat();
+    } catch (deleteError) {
+      setHistoryError(deleteError instanceof Error ? deleteError.message : "The conversation could not be deleted.");
+    } finally {
+      setDeletingConversationId(null);
+    }
+  };
+
   return (
     <main className="nexus-page min-h-dvh bg-[#050505] text-white">
       <div className="nexus-workspace-grid pointer-events-none fixed inset-0 opacity-30" />
@@ -191,6 +240,8 @@ export function AskNexusShell({
           activeConversationId={conversationId}
           loadingConversationId={loadingConversationId}
           onSelectConversation={loadConversation}
+          onDeleteConversation={deleteConversation}
+          deletingConversationId={deletingConversationId}
         />
       </aside>
 
@@ -207,6 +258,8 @@ export function AskNexusShell({
               activeConversationId={conversationId}
               loadingConversationId={loadingConversationId}
               onSelectConversation={loadConversation}
+              onDeleteConversation={deleteConversation}
+              deletingConversationId={deletingConversationId}
             />
           </aside>
         </div>
@@ -497,12 +550,16 @@ function AskNav({
   activeConversationId,
   loadingConversationId,
   onSelectConversation,
+  onDeleteConversation,
+  deletingConversationId,
 }: {
   documentCount: number;
   conversations: ConversationSummary[];
   activeConversationId: string | null;
   loadingConversationId: string | null;
   onSelectConversation: (id: string) => void;
+  onDeleteConversation: (id: string) => void;
+  deletingConversationId: string | null;
 }) {
   return (
     <>
@@ -522,21 +579,32 @@ function AskNav({
                 const loading = conversation.id === loadingConversationId;
 
                 return (
-                  <button
-                    key={conversation.id}
+                  <div key={conversation.id} className={`group flex items-center gap-1 rounded-md transition-colors ${active ? "bg-white/[0.055]" : "hover:bg-white/[0.035]"}`}>
+                    <button
                     type="button"
                     onClick={() => onSelectConversation(conversation.id)}
-                    disabled={loading}
+                    disabled={loading || deletingConversationId === conversation.id}
                     aria-current={active ? "page" : undefined}
                     title={conversation.title}
-                    className={`block w-full truncate rounded-md px-2 py-1.5 text-left text-xs transition-colors active:translate-y-px disabled:cursor-wait ${
+                    className={`min-w-0 flex-1 truncate rounded-md px-2 py-1.5 text-left text-xs transition-colors active:translate-y-px disabled:cursor-wait ${
                       active
-                        ? "bg-white/[0.055] text-[#E4E4E7]"
-                        : "text-[#71717A] hover:bg-white/[0.035] hover:text-[#D4D4D8]"
+                        ? "text-[#E4E4E7]"
+                        : "text-[#71717A] hover:text-[#D4D4D8]"
                     } ${loading ? "animate-pulse" : ""}`}
                   >
                     {conversation.title}
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteConversation(conversation.id)}
+                      disabled={loading || deletingConversationId === conversation.id}
+                      className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#52525B] opacity-0 transition-all hover:bg-red-400/10 hover:text-red-300 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[#5EEAD4] group-hover:opacity-100 disabled:cursor-wait disabled:opacity-50"
+                      aria-label={`Delete conversation: ${conversation.title}`}
+                      title="Delete conversation"
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 );
               })}
             </div>

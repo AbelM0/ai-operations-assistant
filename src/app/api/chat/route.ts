@@ -1,6 +1,7 @@
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
+  generateText,
   smoothStream,
   streamText,
 } from "ai";
@@ -193,6 +194,8 @@ async function getHistory(conversationId: string) {
 async function persistAssistantMessage({
   conversationId,
   userId,
+  question,
+  isFirstTurn,
   answer,
   sources,
   provider,
@@ -201,6 +204,8 @@ async function persistAssistantMessage({
 }: {
   conversationId: string;
   userId: string;
+  question: string;
+  isFirstTurn: boolean;
   answer: string;
   sources: RagSource[];
   provider: string;
@@ -248,6 +253,34 @@ async function persistAssistantMessage({
       .update({ lastMessageAt: new Date().toISOString() })
       .eq("id", conversationId)
       .eq("userId", userId);
+
+    if (isFirstTurn) {
+      try {
+        const titleResult = await generateText({
+          model: getChatModel().model,
+          system:
+            "You create short, specific conversation titles for a document assistant. Summarize the user's request and the assistant's answer together so the title is useful in a history sidebar. Return only the title, with no quotes, prefix, or trailing punctuation.",
+          prompt: `User request:\n${question}\n\nAssistant answer:\n${answer.trim()}`,
+          temperature: 0.2,
+          maxOutputTokens: 40,
+        });
+        const title = titleResult.text
+          .replace(/^['"`]+|['"`]+$/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 120);
+
+        if (title) {
+          await supabaseAdmin
+            .from("conversations")
+            .update({ title })
+            .eq("id", conversationId)
+            .eq("userId", userId);
+        }
+      } catch (titleError) {
+        console.error(`Could not generate title for ${conversationId}`, titleError);
+      }
+    }
 
     if (usage.totalTokens) {
       await supabaseAdmin.from("ai_usage").insert({
@@ -309,6 +342,7 @@ export async function POST(request: Request) {
       userId: appUser.id,
       query,
     });
+    const isFirstTurn = requestedConversationId === null;
     await syncConversationDocuments(conversation.id, documentIds);
     const history = await getHistory(conversation.id);
     const chunks = await retrieveDocumentChunks({
@@ -354,6 +388,8 @@ export async function POST(request: Request) {
         await persistAssistantMessage({
           conversationId: conversation.id,
           userId: appUser.id,
+          question: query,
+          isFirstTurn,
           answer: text,
           sources: context.sources,
           provider: chatModel.provider,
