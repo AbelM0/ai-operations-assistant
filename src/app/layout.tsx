@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Outfit, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { I18nProvider } from "@/i18n/provider";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -123,8 +124,10 @@ export default function RootLayout({
             },
           }}
         >
-          {children}
-          <Toaster closeButton />
+          <I18nProvider>
+            {children}
+            <Toaster closeButton />
+          </I18nProvider>
         </ClerkProvider>
       </body>
     </html>

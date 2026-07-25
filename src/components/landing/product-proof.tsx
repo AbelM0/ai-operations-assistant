@@ -7,29 +7,28 @@ import {
   Quotes,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 const capabilities = [
   {
     number: "01",
-    title: "The source stays visible",
-    body: "Preview the original document beside its status, metadata, and generated summary.",
+    key: "visible",
     icon: FileText,
   },
   {
     number: "02",
-    title: "The wait has a visible state",
-    body: "Retrieval and summary preparation report progress before model text begins streaming.",
+    key: "progress",
     icon: CheckCircle,
   },
   {
     number: "03",
-    title: "The conversation keeps context",
-    body: "Choose documents before chatting, adjust the selection later, and return through saved history.",
+    key: "context",
     icon: ChatCenteredDots,
   },
 ];
 
 export function ProductProof() {
+  const { t } = useTranslation();
   return (
     <section id="product" className="px-5 py-32 sm:px-8 md:py-48">
       <div className="mx-auto max-w-7xl">
@@ -42,24 +41,22 @@ export function ProductProof() {
         >
           <div>
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5EEAD4]">
-              Designed around verification
+              {t("landing.proof.eyebrow")}
             </p>
             <h2 className="mt-6 max-w-xl text-balance text-[clamp(2.7rem,5vw,5.2rem)] font-medium leading-[0.98] tracking-[-0.05em] text-white">
-              Useful AI keeps its working set in view.
+              {t("landing.proof.title")}
             </h2>
           </div>
           <p className="max-w-xl text-pretty text-base leading-7 text-[#A1A1AA]">
-            NexusOps does not hide document selection, retrieval, or citations
-            behind a single loading state. Each stage is visible, and every
-            conversation remains attached to the workspace that produced it.
+            {t("landing.proof.intro")}
           </p>
         </motion.div>
 
         <div className="mt-16 grid gap-3 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="space-y-3">
-            {capabilities.map(({ number, title, body, icon: Icon }, index) => (
+            {capabilities.map(({ number, key, icon: Icon }, index) => (
               <motion.article
-                key={title}
+                key={key}
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
@@ -76,10 +73,10 @@ export function ProductProof() {
                 </span>
                 <div>
                   <h3 className="text-base font-semibold tracking-[-0.02em] text-white">
-                    {title}
+                    {t(`landing.proof.${key}.title`)}
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-[#71717A]">
-                    {body}
+                    {t(`landing.proof.${key}.body`)}
                   </p>
                 </div>
                 <Icon
@@ -110,28 +107,26 @@ export function ProductProof() {
                   </span>
                   <div>
                     <p className="text-sm font-medium text-white">
-                      Grounded response
+                      {t("landing.proof.response")}
                     </p>
                     <p className="mt-0.5 text-xs text-[#71717A]">
-                      2 selected documents · 3 retrieved passages
+                      {t("landing.proof.retrievalSummary")}
                     </p>
                   </div>
                 </div>
                 <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#5EEAD4]">
-                  Streaming
+                  {t("landing.proof.streaming")}
                 </span>
               </div>
 
               <div className="py-10">
                 <p className="max-w-2xl text-lg leading-8 text-[#E4E4E7]">
-                  The policy requires written approval before an exception can
-                  be applied [S1]. It also assigns the final review to the
-                  operations lead [S2].
+                  {t("landing.proof.sampleAnswer")}
                 </p>
                 <div className="mt-7 grid gap-2 sm:grid-cols-2">
                   {[
-                    ["S1", "Policy handbook · page 12"],
-                    ["S2", "Review procedure · page 3"],
+                    ["S1", t("landing.proof.policySource")],
+                    ["S2", t("landing.proof.procedureSource")],
                   ].map(([source, detail]) => (
                     <div
                       key={source}

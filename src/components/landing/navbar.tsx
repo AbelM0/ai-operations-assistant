@@ -5,16 +5,19 @@ import { UserButton, useAuth } from "@clerk/nextjs";
 import { ArrowRight } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
+import { LanguageToggle } from "@/components/language-toggle";
 
 const navLinks = [
-  { href: "#features", label: "Capabilities" },
-  { href: "#workflow", label: "Workflow" },
-  { href: "#product", label: "Inside Nexus" },
+  { href: "#features", label: "nav.capabilities" },
+  { href: "#workflow", label: "nav.workflow" },
+  { href: "#product", label: "nav.insideNexus" },
 ];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { isSignedIn } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -29,7 +32,7 @@ export function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className="fixed inset-x-0 top-0 z-50 flex justify-center px-3 sm:px-5"
-      aria-label="Primary navigation"
+      aria-label={t("nav.primary")}
     >
       <motion.div
         animate={{
@@ -44,7 +47,7 @@ export function Navbar() {
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="flex w-[calc(100vw-1.5rem)] min-w-0 max-w-7xl items-center justify-between rounded-xl border px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:w-full sm:px-5"
       >
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Nexus home">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label={t("nav.homeAria")}>
           <motion.span
             animate={{ opacity: [0.45, 1, 0.45], scale: [0.9, 1, 0.9] }}
             transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
@@ -64,19 +67,20 @@ export function Navbar() {
               transition={{ duration: 0.2 }}
               className="text-sm text-[#A1A1AA]"
             >
-              {item.label}
+              {t(item.label)}
             </motion.a>
           ))}
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+          <LanguageToggle />
           {isSignedIn ? (
             <>
               <Link
                 href="/workspace"
                 className="hidden items-center gap-2 rounded-lg bg-[#2DD4BF] px-4 py-2 text-sm font-semibold text-[#04100E] transition-colors hover:bg-[#5EEAD4] sm:flex"
               >
-                Open workspace
+                {t("landing.openWorkspace")}
                 <ArrowRight className="h-4 w-4" weight="bold" />
               </Link>
               <UserButton
@@ -95,7 +99,7 @@ export function Navbar() {
                   href="/sign-in"
                   className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[#D4D4D8] sm:block sm:px-4"
                 >
-                  Log in
+                  {t("nav.login")}
                 </Link>
               </motion.div>
               <motion.div
@@ -106,8 +110,8 @@ export function Navbar() {
                   href="/sign-up"
                   className="block rounded-lg bg-[#2DD4BF] px-3 py-2 text-sm font-semibold text-[#04100E] sm:px-4"
                 >
-                  <span className="sm:hidden">Start</span>
-                  <span className="hidden sm:inline">Start free</span>
+                  <span className="sm:hidden">{t("nav.start")}</span>
+                  <span className="hidden sm:inline">{t("nav.startFree")}</span>
                 </Link>
               </motion.div>
             </>

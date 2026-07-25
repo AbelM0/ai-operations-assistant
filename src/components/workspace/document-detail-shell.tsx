@@ -41,6 +41,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "react-i18next";
+import { LanguageToggle } from "@/components/language-toggle";
 
 const processingStatuses = [
   "UPLOADED",
@@ -55,8 +57,8 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "UTC",
@@ -76,6 +78,8 @@ export function DocumentDetailShell({
   models: SummaryModelOption[];
   defaultModel: string;
 }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage === "am" ? "am-ET" : "en";
   const router = useRouter();
   const [document, setDocument] = useState(initialDocument);
   const [selectedModel, setSelectedModel] = useState(defaultModel);
@@ -120,7 +124,7 @@ export function DocumentDetailShell({
           cache: "no-store",
         });
         if (!response.ok) {
-          throw new Error("The saved summary could not be refreshed.");
+          throw new Error(t("detail.summaryRefreshFailedDescription"));
         }
         const payload = (await response.json()) as {
           document: WorkspaceDocumentDetail;
@@ -129,21 +133,21 @@ export function DocumentDetailShell({
         if (payload.document.summaries[0]) {
           setSelectedSummaryId(payload.document.summaries[0].id);
         }
-        toast.success("Summary ready", {
-          description: "You can now review or export it.",
+        toast.success(t("detail.summaryReady"), {
+          description: t("detail.summaryReadyDescription"),
         });
       } catch (refreshError) {
-        toast.error("Summary generated but not refreshed", {
+        toast.error(t("detail.summaryRefreshFailed"), {
           description:
             refreshError instanceof Error
               ? refreshError.message
-              : "Refresh the page to load the saved version.",
+              : t("detail.summaryRefreshFailedDescription"),
         });
       }
     },
     onError: (summaryRequestError) => {
       setSummaryProgress(null);
-      toast.error("Summary not generated", {
+      toast.error(t("detail.summaryFailed"), {
         description: summaryRequestError.message,
       });
     },
@@ -207,8 +211,8 @@ export function DocumentDetailShell({
     clearSummaryError();
     setSummaryProgress({
       stage: "retrieving",
-      label: "Opening live summary",
-      detail: "Connecting to the document summary stream.",
+      label: t("detail.openingSummary"),
+      detail: t("detail.openingSummaryDetail"),
     });
     summaryScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
     void sendSummaryMessage(
@@ -234,7 +238,7 @@ export function DocumentDetailShell({
         if (payload.document) {
           setDocument((current) => ({ ...current, ...payload.document }));
         }
-        throw new Error(payload.error || "Processing could not be restarted.");
+        throw new Error(payload.error || t("detail.processingRestartFailed"));
       }
       setDocument((current) => ({
         ...current,
@@ -243,13 +247,13 @@ export function DocumentDetailShell({
       }));
       toast.success(
         payload.document?.status === "READY"
-          ? "Document ready"
-          : "Processing restarted",
+          ? t("detail.documentReady")
+          : t("detail.processingRestarted"),
       );
     } catch (error) {
-      toast.error("Processing not restarted", {
+      toast.error(t("detail.processingRestartFailed"), {
         description:
-          error instanceof Error ? error.message : "Please try again.",
+          error instanceof Error ? error.message : t("detail.tryAgain"),
       });
     } finally {
       setIsRetrying(false);
@@ -266,14 +270,14 @@ export function DocumentDetailShell({
         error?: string;
       };
       if (!response.ok)
-        throw new Error(payload.error || "The document could not be deleted.");
-      toast.success("Document deleted");
+        throw new Error(payload.error || t("detail.documentDeleteFailed"));
+      toast.success(t("detail.documentDeleted"));
       router.push("/workspace/documents");
       router.refresh();
     } catch (error) {
-      toast.error("Document not deleted", {
+      toast.error(t("detail.documentDeleteFailed"), {
         description:
-          error instanceof Error ? error.message : "Please try again.",
+          error instanceof Error ? error.message : t("detail.tryAgain"),
       });
       setIsDeleting(false);
     }
@@ -295,7 +299,7 @@ export function DocumentDetailShell({
           <button
             type="button"
             className="absolute inset-0 bg-black/70"
-            aria-label="Close navigation"
+            aria-label={t("nav.closeNavigation")}
             onClick={() => setMobileNavOpen(false)}
           />
           <aside className="relative flex h-full w-[min(20rem,88vw)] flex-col border-r border-white/10 bg-[#08080A] px-4 py-5">
@@ -303,7 +307,7 @@ export function DocumentDetailShell({
               type="button"
               onClick={() => setMobileNavOpen(false)}
               className="absolute right-4 top-5 rounded-lg p-2 text-[#A1A1AA]"
-              aria-label="Close navigation"
+              aria-label={t("nav.closeNavigation")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -319,7 +323,7 @@ export function DocumentDetailShell({
               type="button"
               onClick={() => setMobileNavOpen(true)}
               className="rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 lg:hidden"
-              aria-label="Open navigation"
+              aria-label={t("nav.openNavigation")}
             >
               <SidebarSimple className="h-5 w-5" />
             </button>
@@ -328,17 +332,20 @@ export function DocumentDetailShell({
               className="flex items-center gap-2 text-sm text-[#A1A1AA] transition-colors hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" />
-              Documents
+              {t("nav.documents")}
             </Link>
           </div>
-          <UserButton
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            <UserButton
             appearance={{
               elements: {
                 userButtonBox: "h-9 w-9 rounded-lg",
                 avatarBox: "h-9 w-9 rounded-lg",
               },
             }}
-          />
+            />
+          </div>
         </header>
 
         <div className="mx-auto w-full max-w-[1480px] px-4 pb-16 pt-8 sm:px-7 lg:px-10 lg:pb-20">
@@ -346,7 +353,7 @@ export function DocumentDetailShell({
             <div className="min-w-0 max-w-3xl">
               <div className="flex items-center gap-3">
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5EEAD4]">
-                  Document record
+                  {t("detail.record")}
                 </span>
                 <Status status={document.status} />
               </div>
@@ -355,12 +362,12 @@ export function DocumentDetailShell({
               </h1>
               <p className="mt-4 text-sm text-[#71717A]">
                 {formatBytes(document.sizeBytes)}
-                <span className="mx-2 text-[#3F3F46]">/</span>Uploaded{" "}
-                {formatDate(document.createdAt)}
+                <span className="mx-2 text-[#3F3F46]">/</span>{t("detail.uploaded")}{" "}
+                {formatDate(document.createdAt, locale)}
                 {document.pageCount ? (
                   <>
                     <span className="mx-2 text-[#3F3F46]">/</span>
-                    {document.pageCount} pages
+                    {t("detail.pages", { count: document.pageCount })}
                   </>
                 ) : null}
               </p>
@@ -373,14 +380,14 @@ export function DocumentDetailShell({
                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 px-4 text-sm font-medium text-[#D4D4D8] hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white"
               >
                 <ArrowSquareOut className="h-4 w-4" />
-                View original
+                {t("detail.viewOriginal")}
               </a>
               <a
                 href={`/api/documents/${document.id}/file?download=1`}
                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 px-4 text-sm font-medium text-[#D4D4D8] hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white"
               >
                 <DownloadSimple className="h-4 w-4" />
-                Download
+                {t("common.download")}
               </a>
               <button
                 type="button"
@@ -388,7 +395,7 @@ export function DocumentDetailShell({
                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-400/15 px-4 text-sm font-medium text-red-300 hover:bg-red-400/8"
               >
                 <Trash className="h-4 w-4" />
-                Delete
+                {t("common.delete")}
               </button>
             </div>
           </section>
@@ -410,14 +417,14 @@ export function DocumentDetailShell({
                   }`}
                 >
                   {document.status === "FAILED"
-                    ? "Processing failed"
-                    : "Processing has not started"}
+                    ? t("detail.processingFailed")
+                    : t("detail.processingNotStarted")}
                 </p>
                 <p className="mt-1 text-sm text-[#A1A1AA]">
                   {document.status === "FAILED"
                     ? document.errorMessage ||
-                      "The document could not be processed."
-                    : "Restart processing to extract and index this document."}
+                      t("detail.documentProcessFailedBody")
+                    : t("detail.processingNotStartedBody")}
                 </p>
               </div>
               <button
@@ -431,7 +438,7 @@ export function DocumentDetailShell({
                 ) : (
                   <ArrowClockwise className="h-4 w-4" />
                 )}
-                Restart processing
+                {t("detail.restartProcessing")}
               </button>
             </section>
           ) : null}
@@ -444,14 +451,14 @@ export function DocumentDetailShell({
                   className="h-11 gap-2 rounded-none px-1 text-[#71717A] data-active:text-white group-data-[variant=line]/tabs-list:data-active:after:bg-[#2DD4BF]"
                 >
                   <FilePdf className="h-4 w-4" />
-                  Preview
+                  {t("detail.preview")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="summary"
                   className="h-11 gap-2 rounded-none px-1 text-[#71717A] data-active:text-white group-data-[variant=line]/tabs-list:data-active:after:bg-[#2DD4BF]"
                 >
                   <Sparkle className="h-4 w-4" />
-                  Summary
+                  {t("detail.summary")}
                   {document.summaries.length > 0 ? (
                     <span className="ml-1 rounded bg-[#2DD4BF]/10 px-1.5 py-0.5 font-mono text-[9px] text-[#5EEAD4]">
                       {document.summaries.length}
@@ -460,7 +467,7 @@ export function DocumentDetailShell({
                 </TabsTrigger>
               </TabsList>
               <p className="hidden text-xs text-[#52525B] sm:block">
-                Switch views without leaving this record
+                {t("detail.switchViews")}
               </p>
             </div>
 
@@ -475,10 +482,10 @@ export function DocumentDetailShell({
                       id="preview-heading"
                       className="text-sm font-semibold text-white"
                     >
-                      Document preview
+                      {t("detail.previewTitle")}
                     </h2>
                     <p className="mt-1 text-xs text-[#71717A]">
-                      Original file, securely loaded from your workspace.
+                      {t("detail.previewDescription")}
                     </p>
                   </div>
                   <FilePdf
@@ -488,7 +495,9 @@ export function DocumentDetailShell({
                 </div>
                 <iframe
                   src={`/api/documents/${document.id}/file`}
-                  title={`Preview of ${document.originalName}`}
+                  title={t("detail.previewAria", {
+                    name: document.originalName,
+                  })}
                   className="h-[72dvh] min-h-[34rem] w-full bg-[#17171A]"
                 />
               </section>
@@ -501,15 +510,14 @@ export function DocumentDetailShell({
                     <Sparkle className="h-5 w-5" weight="fill" />
                   </div>
                   <h2 className="mt-5 text-xl font-semibold tracking-[-0.03em]">
-                    Summarize this document
+                    {t("detail.summarizeDocument")}
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-[#8B8B95]">
-                    Create a detailed, structured review of the source text and
-                    keep each version in this record.
+                    {t("detail.summarizeDescription")}
                   </p>
                   <label className="mt-5 block">
                     <span className="text-xs font-medium text-[#D4D4D8]">
-                      Model
+                      {t("detail.model")}
                     </span>
                     <span className="relative mt-2 block">
                       <select
@@ -528,10 +536,13 @@ export function DocumentDetailShell({
                       <CaretDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-[#71717A]" />
                     </span>
                     <span className="mt-2 block text-xs leading-5 text-[#71717A]">
-                      {
-                        models.find((model) => model.id === selectedModel)
-                          ?.description
-                      }
+                      {t(
+                        selectedModel === "deepseek-v4-flash"
+                          ? "detail.modelDescriptions.flash"
+                          : selectedModel === "deepseek-v4-pro"
+                            ? "detail.modelDescriptions.pro"
+                            : "detail.modelDescriptions.configured",
+                      )}
                     </span>
                   </label>
                   <button
@@ -546,10 +557,10 @@ export function DocumentDetailShell({
                       <Sparkle className="h-4 w-4" weight="fill" />
                     )}
                     {isSummarizing
-                      ? "Stop generating"
+                      ? t("detail.stopGenerating")
                       : document.status === "READY"
-                        ? "Generate summary"
-                        : "Available after processing"}
+                        ? t("detail.generateSummary")
+                        : t("detail.availableAfterProcessing")}
                   </button>
                 </section>
 
@@ -557,18 +568,20 @@ export function DocumentDetailShell({
                   <div className="flex flex-col gap-4 border-b border-white/8 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-6">
                     <div>
                       <h2 className="text-lg font-semibold tracking-[-0.02em]">
-                        Summary
+                        {t("detail.summary")}
                       </h2>
                       <p className="mt-1 text-xs text-[#71717A]">
                         {document.summaries.length
-                          ? `${document.summaries.length} saved ${document.summaries.length === 1 ? "version" : "versions"}`
-                          : "No summary generated yet"}
+                          ? t("detail.savedVersion", {
+                              count: document.summaries.length,
+                            })
+                          : t("detail.noSummary")}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {document.summaries.length > 1 ? (
                         <select
-                          aria-label="Summary version"
+                          aria-label={t("detail.summaryVersion")}
                           value={currentSummary?.id}
                           onChange={(event) => {
                             setSummaryMessages([]);
@@ -578,8 +591,10 @@ export function DocumentDetailShell({
                         >
                           {document.summaries.map((summary, index) => (
                             <option value={summary.id} key={summary.id}>
-                              Version {document.summaries.length - index} ·{" "}
-                              {summary.model}
+                              {t("detail.version", {
+                                number: document.summaries.length - index,
+                                model: summary.model,
+                              })}
                             </option>
                           ))}
                         </select>
@@ -618,7 +633,7 @@ export function DocumentDetailShell({
                           type="button"
                           onClick={clearSummaryError}
                           className="shrink-0 text-red-300 hover:text-white"
-                          aria-label="Dismiss summary error"
+                          aria-label={t("common.dismissError")}
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -628,11 +643,11 @@ export function DocumentDetailShell({
                       <div className="mx-auto max-w-3xl py-4" aria-live="polite">
                         <p className="text-sm font-medium text-[#D4D4D8]">
                           {summaryProgress?.label ||
-                            "Preparing document context"}
+                            t("detail.preparingContext")}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-[#71717A]">
                           {summaryProgress?.detail ||
-                            "Reading the indexed pages before the first words arrive."}
+                            t("detail.preparingContextDetail")}
                         </p>
                         <div className="mt-5 space-y-2">
                           <div className="h-2.5 w-4/5 animate-pulse rounded bg-white/8" />
@@ -648,29 +663,40 @@ export function DocumentDetailShell({
                         </StreamingMarkdown>
                         <div className="mt-9 border-t border-white/8 pt-4 font-mono text-[9px] uppercase tracking-[0.1em] text-[#52525B]">
                           {isSummarizing
-                            ? `Generating live with ${selectedModel}`
+                            ? t("detail.generatingLive", {
+                                model: selectedModel,
+                              })
                             : currentSummary
-                              ? `Generated ${formatDate(currentSummary.createdAt)} · ${currentSummary.model}`
-                              : `Generated with ${selectedModel}`}
+                              ? t("detail.generatedAt", {
+                                  date: formatDate(
+                                    currentSummary.createdAt,
+                                    locale,
+                                  ),
+                                  model: currentSummary.model,
+                                })
+                              : t("detail.generatedWith", {
+                                  model: selectedModel,
+                                })}
                         </div>
                       </div>
                     ) : currentSummary ? (
                       <div className="mx-auto max-w-3xl">
                         <SummaryContent value={currentSummary.summary} />
                         <div className="mt-9 border-t border-white/8 pt-4 font-mono text-[9px] uppercase tracking-[0.1em] text-[#52525B]">
-                          Generated {formatDate(currentSummary.createdAt)} ·{" "}
-                          {currentSummary.model}
+                          {t("detail.generatedAt", {
+                            date: formatDate(currentSummary.createdAt, locale),
+                            model: currentSummary.model,
+                          })}
                         </div>
                       </div>
                     ) : (
                       <div className="flex min-h-80 flex-col items-center justify-center text-center">
                         <FileText className="h-8 w-8 text-[#3F3F46]" />
                         <p className="mt-4 text-sm font-medium text-[#A1A1AA]">
-                          Your generated summary will appear here.
+                          {t("detail.emptySummary")}
                         </p>
                         <p className="mt-2 max-w-sm text-xs leading-5 text-[#52525B]">
-                          Choose a model and generate a summary from the
-                          controls on the left.
+                          {t("detail.emptySummaryHint")}
                         </p>
                       </div>
                     )}
@@ -697,10 +723,9 @@ export function DocumentDetailShell({
               <WarningCircle className="h-5 w-5" weight="fill" />
             </div>
             <DialogHeader className="mt-5 text-left">
-              <DialogTitle>Delete this document?</DialogTitle>
+              <DialogTitle>{t("detail.deleteTitle")}</DialogTitle>
               <DialogDescription className="mt-1 leading-6 text-[#A1A1AA]">
-                The original file, extracted text, and every generated summary
-                will be permanently removed.
+                {t("detail.deleteDescription")}
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -711,7 +736,7 @@ export function DocumentDetailShell({
               onClick={() => setDeleteOpen(false)}
               className="h-10 rounded-lg border border-white/10 px-4 text-sm text-[#D4D4D8]"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="button"
@@ -724,7 +749,9 @@ export function DocumentDetailShell({
               ) : (
                 <Trash className="h-4 w-4" />
               )}
-              {isDeleting ? "Deleting…" : "Delete permanently"}
+              {isDeleting
+                ? t("detail.deleting")
+                : t("detail.deletePermanently")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -734,33 +761,37 @@ export function DocumentDetailShell({
 }
 
 function Status({ status }: { status: string }) {
+  const { t } = useTranslation();
   const ready = status === "READY";
   const failed = status === "FAILED";
   return (
     <span
       className={`rounded-md border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] ${ready ? "border-[#2DD4BF]/25 bg-[#2DD4BF]/8 text-[#5EEAD4]" : failed ? "border-red-400/20 bg-red-400/8 text-red-300" : "border-white/10 bg-white/5 text-[#A1A1AA]"}`}
     >
-      {status.replaceAll("_", " ").toLowerCase()}
+      {t(`documents.status.${status.replace("OCR_", "").toLowerCase()}`, {
+        defaultValue: status.replaceAll("_", " ").toLowerCase(),
+      })}
     </span>
   );
 }
 
 function DetailNav() {
+  const { t } = useTranslation();
   return (
     <>
-      <Link href="/" className="flex w-fit items-center gap-2.5 px-2">
+      <Link href="/" className="flex w-fit items-center gap-2.5 px-2" aria-label={t("nav.homeAria")}>
         <span className="h-2.5 w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_18px_rgba(45,212,191,0.65)]" />
         <span className="text-sm font-semibold tracking-[0.17em]">
           NEXUS<span className="text-[#71717A]">/OPS</span>
         </span>
       </Link>
-      <nav className="mt-10 space-y-1" aria-label="Workspace navigation">
+      <nav className="mt-10 space-y-1" aria-label={t("nav.workspaceNavigation")}>
         <Link
           href="/workspace"
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"
         >
           <House className="h-4 w-4" />
-          Overview
+          {t("nav.overview")}
         </Link>
         <Link
           href="/workspace/documents"
@@ -768,20 +799,20 @@ function DetailNav() {
           className="flex items-center gap-3 rounded-lg bg-[#2DD4BF]/10 px-3 py-2.5 text-sm text-[#5EEAD4]"
         >
           <FileText className="h-4 w-4" weight="fill" />
-          Documents
+          {t("nav.documents")}
         </Link>
         <Link
           href="/workspace/ask"
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"
         >
           <ChatCenteredDots className="h-4 w-4" />
-          Ask Nexus
+          {t("nav.askNexus")}
         </Link>
       </nav>
       <div className="mt-auto rounded-xl border border-white/8 bg-[#0D0D0F] p-4">
         <Sparkle className="h-4 w-4 text-[#5EEAD4]" />
         <p className="mt-3 text-xs leading-5 text-[#71717A]">
-          Generate and export a focused summary from this document.
+          {t("detail.navHint")}
         </p>
       </div>
     </>

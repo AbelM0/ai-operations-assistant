@@ -31,29 +31,28 @@ import {
 } from "@/components/ui/dialog";
 import type { WorkspaceDocument } from "@/lib/documents/types";
 import type { ConversationSummary } from "@/lib/rag/types";
+import { useTranslation } from "react-i18next";
+import { LanguageToggle } from "@/components/language-toggle";
 
 const guidance = [
   {
-    title: "Invoices",
-    body: "Track vendors, totals, due dates, and tax details.",
+    key: "invoices",
     icon: FileText,
   },
   {
-    title: "Receipts",
-    body: "Capture expenses and keep source records together.",
+    key: "receipts",
     icon: Receipt,
   },
   {
-    title: "Business documents",
-    body: "Search contracts, reports, statements, and policies.",
+    key: "business",
     icon: FolderSimple,
   },
-];
+] as const;
 
 const navItems = [
-  { label: "Overview", icon: House, href: "/workspace", active: true },
-  { label: "Documents", icon: FileText, href: "/workspace/documents", active: false },
-  { label: "Ask Nexus", icon: ChatCenteredDots, href: "/workspace/ask", active: false },
+  { label: "nav.overview", icon: House, href: "/workspace", active: true },
+  { label: "nav.documents", icon: FileText, href: "/workspace/documents", active: false },
+  { label: "nav.askNexus", icon: ChatCenteredDots, href: "/workspace/ask", active: false },
 ];
 
 function formatBytes(bytes: number) {
@@ -61,8 +60,8 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -81,6 +80,7 @@ export function WorkspaceShell({
   initialConversations: ConversationSummary[];
   conversationCount: number;
 }) {
+  const { t } = useTranslation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [documents, setDocuments] = useState(initialDocuments);
@@ -107,7 +107,7 @@ export function WorkspaceShell({
           <button
             type="button"
             className="absolute inset-0 bg-black/70"
-            aria-label="Close navigation"
+            aria-label={t("nav.closeNavigation")}
             onClick={() => setMobileNavOpen(false)}
           />
           <aside className="relative flex h-full w-[min(20rem,88vw)] flex-col border-r border-white/10 bg-[#08080A] px-4 py-5 shadow-2xl shadow-black">
@@ -115,7 +115,7 @@ export function WorkspaceShell({
               type="button"
               onClick={() => setMobileNavOpen(false)}
               className="absolute right-4 top-5 rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white"
-              aria-label="Close navigation"
+              aria-label={t("nav.closeNavigation")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -131,16 +131,17 @@ export function WorkspaceShell({
               type="button"
               onClick={() => setMobileNavOpen(true)}
               className="rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-[#5EEAD4] lg:hidden"
-              aria-label="Open navigation"
+              aria-label={t("nav.openNavigation")}
             >
               <SidebarSimple className="h-5 w-5" />
             </button>
             <div>
-              <p className="text-sm font-medium text-white">Workspace</p>
-              <p className="hidden text-xs text-[#71717A] sm:block">Your private operations library</p>
+              <p className="text-sm font-medium text-white">{t("nav.workspace")}</p>
+              <p className="hidden text-xs text-[#71717A] sm:block">{t("workspace.privateLibrary")}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageToggle />
             <UserButton
               appearance={{
                 elements: {
@@ -172,9 +173,9 @@ export function WorkspaceShell({
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto border border-white/10 bg-[#0B0B0D] p-5 text-white shadow-[0_32px_120px_rgba(0,0,0,0.75)] sm:max-w-2xl sm:p-7">
           <DialogHeader className="pr-10">
-            <DialogTitle className="text-xl font-semibold tracking-[-0.025em] text-white">Upload a document</DialogTitle>
+            <DialogTitle className="text-xl font-semibold tracking-[-0.025em] text-white">{t("workspace.uploadDocument")}</DialogTitle>
             <DialogDescription className="leading-6 text-[#8B8B95]">
-              Add another invoice, receipt, or business document to your workspace.
+              {t("workspace.uploadDescription")}
             </DialogDescription>
           </DialogHeader>
           <DocumentUpload showHeader={false} onUploaded={handleUploaded} />
@@ -191,47 +192,43 @@ function NewUserOverview({
   firstName: string;
   onUploaded: (document: WorkspaceDocument) => void;
 }) {
+  const { t } = useTranslation();
   const workflow = [
     {
-      title: "Add a source",
-      body: "Upload a PDF or image from your day-to-day operations.",
+      key: "add",
       icon: Plus,
     },
     {
-      title: "Let Nexus index it",
-      body: "OCR, page structure, and searchable chunks are prepared automatically.",
+      key: "index",
       icon: Lightning,
     },
     {
-      title: "Review the document",
-      body: "Open the preview and generate a streamed summary of the important material.",
+      key: "review",
       icon: FileText,
     },
     {
-      title: "Ask with evidence",
-      body: "Select one or more ready documents, ask a question, and verify the cited sources.",
+      key: "ask",
       icon: ChatCenteredDots,
     },
-  ];
+  ] as const;
 
   return (
     <>
       <section className="grid gap-8 border-b border-white/8 pb-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="max-w-3xl">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5EEAD4]">
-            Workspace setup · 0 of 4 complete
+            {t("workspace.setup")}
           </p>
           <h1 className="mt-4 text-balance text-[clamp(2.5rem,5vw,4.75rem)] font-medium leading-[0.98] tracking-[-0.05em] text-white">
-            Start with one document, {firstName}.
+            {t("workspace.startWithDocument", { name: firstName })}
           </h1>
           <p className="mt-5 max-w-2xl text-pretty text-base leading-7 text-[#A1A1AA] sm:text-lg">
-            NexusOps turns a business file into a searchable source, a clear
-            summary, and answers you can trace back to the page.
+            {t("workspace.setupDescription")}
           </p>
         </div>
         <div className="hidden items-center gap-3 font-mono text-[9px] uppercase tracking-[0.14em] text-[#71717A] sm:flex">
           <span className="h-px w-12 bg-[#2DD4BF]/45" />
-          About two minutes to begin
+          {t("workspace.aboutTwoMinutes")}
         </div>
       </section>
 
@@ -242,19 +239,19 @@ function NewUserOverview({
         >
           <div className="border-b border-white/8 px-5 py-5 sm:px-6">
             <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#5EEAD4]">
-              Your first workflow
+              {t("workspace.firstWorkflow")}
             </p>
             <h2
               id="workflow-guide-heading"
               className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white"
             >
-              From upload to grounded answer
+              {t("workspace.uploadToAnswer")}
             </h2>
           </div>
           <ol className="px-5 py-2 sm:px-6">
-            {workflow.map(({ title, body, icon: Icon }, index) => (
+            {workflow.map(({ key, icon: Icon }, index) => (
               <li
-                key={title}
+                key={key}
                 className="relative grid grid-cols-[2.5rem_1fr] gap-4 border-b border-white/7 py-5 last:border-0"
               >
                 {index < workflow.length - 1 ? (
@@ -266,14 +263,14 @@ function NewUserOverview({
                 <div className="pt-0.5">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-[#E4E4E7]">
-                      {title}
+                      {t(`workspace.workflow.${key}.title`)}
                     </p>
                     <span className="font-mono text-[9px] text-[#52706B]">
                       0{index + 1}
                     </span>
                   </div>
                   <p className="mt-1.5 text-xs leading-5 text-[#7E8C89]">
-                    {body}
+                    {t(`workspace.workflow.${key}.body`)}
                   </p>
                 </div>
               </li>
@@ -292,21 +289,25 @@ function NewUserOverview({
             id="guidance-heading"
             className="text-lg font-semibold tracking-[-0.025em] text-white"
           >
-            Choose a useful first source
+            {t("workspace.chooseFirstSource")}
           </h2>
           <p className="mt-2 max-w-sm text-sm leading-6 text-[#71717A]">
-            Pick something connected to a question you already need to answer.
+            {t("workspace.chooseFirstSourceHint")}
           </p>
         </div>
         <div className="grid gap-px overflow-hidden rounded-lg border border-white/8 bg-white/8 md:grid-cols-3">
-          {guidance.map(({ title, body, icon: Icon }) => (
+          {guidance.map(({ key, icon: Icon }) => (
             <article
-              key={title}
+              key={key}
               className="bg-[#0E0E11] p-4 transition-colors hover:bg-[#121216]"
             >
               <Icon className="h-5 w-5 text-[#5EEAD4]" weight="duotone" />
-              <h3 className="mt-4 text-sm font-semibold text-white">{title}</h3>
-              <p className="mt-2 text-xs leading-5 text-[#8B8B95]">{body}</p>
+              <h3 className="mt-4 text-sm font-semibold text-white">
+                {t(`workspace.guidance.${key}.title`)}
+              </h3>
+              <p className="mt-2 text-xs leading-5 text-[#8B8B95]">
+                {t(`workspace.guidance.${key}.body`)}
+              </p>
             </article>
           ))}
         </div>
@@ -330,6 +331,7 @@ function ActiveWorkspaceOverview({
   showFirstUploadNextSteps: boolean;
   onUpload: () => void;
 }) {
+  const { t } = useTranslation();
   const processingCount = documents.filter(
     (document) =>
       document.status !== "READY" && document.status !== "FAILED",
@@ -344,20 +346,22 @@ function ActiveWorkspaceOverview({
         <div className="max-w-3xl">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5EEAD4]">
             {showFirstUploadNextSteps
-              ? "First source received"
-              : "Workspace dashboard"}
+              ? t("workspace.firstSourceReceived")
+              : t("workspace.dashboard")}
           </p>
           <h1 className="mt-3 text-balance text-[clamp(2.25rem,4.5vw,4rem)] font-medium leading-[1] tracking-[-0.05em] text-white">
             {showFirstUploadNextSteps
-              ? "Your first workflow is underway."
-              : `Good to see you, ${firstName}.`}
+              ? t("workspace.firstUnderway")
+              : t("workspace.greeting", { name: firstName })}
           </h1>
           <p className="mt-4 max-w-2xl text-pretty text-sm leading-6 text-[#A1A1AA] sm:text-base">
             {showFirstUploadNextSteps
-              ? "Nexus is preparing the document for preview, summaries, and source-grounded questions."
+              ? t("workspace.firstSourcePreparing")
               : processingCount > 0
-                ? `${processingCount} ${processingCount === 1 ? "document is" : "documents are"} still being prepared. Ready sources can already be used in Ask Nexus.`
-                : "Your ready documents, recent conversations, and next actions are collected here."}
+                ? t("workspace.processingDescription", {
+                    count: processingCount,
+                  })
+                : t("workspace.dashboardDescription")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -366,7 +370,7 @@ function ActiveWorkspaceOverview({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/10 px-4 text-sm font-semibold text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/35 hover:bg-[#2DD4BF]/8 hover:text-white active:translate-y-px"
           >
             <ChatCenteredDots className="h-4 w-4" />
-            Ask Nexus
+            {t("nav.askNexus")}
           </Link>
           <button
             type="button"
@@ -374,7 +378,7 @@ function ActiveWorkspaceOverview({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#2DD4BF] px-4 text-sm font-semibold text-[#04100E] transition-colors hover:bg-[#5EEAD4] active:translate-y-px"
           >
             <Plus className="h-4 w-4" weight="bold" />
-            Upload
+            {t("common.upload")}
           </button>
         </div>
       </section>
@@ -394,8 +398,7 @@ function ActiveWorkspaceOverview({
           className="mt-5 flex items-center justify-between gap-4 rounded-lg border border-red-400/15 bg-red-400/[0.045] px-4 py-3 text-sm text-red-200 transition-colors hover:bg-red-400/[0.07]"
         >
           <span>
-            {failedCount} {failedCount === 1 ? "document needs" : "documents need"}{" "}
-            attention before they can be searched.
+            {t("workspace.failedAttention", { count: failedCount })}
           </span>
           <ArrowRight className="h-4 w-4 shrink-0" />
         </Link>
@@ -410,6 +413,7 @@ function ActiveWorkspaceOverview({
 }
 
 function FirstSourceGuide({ document }: { document: WorkspaceDocument }) {
+  const { t } = useTranslation();
   const isReady = document.status === "READY";
   return (
     <section
@@ -427,29 +431,35 @@ function FirstSourceGuide({ document }: { document: WorkspaceDocument }) {
           </span>
           <div>
             <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#5EEAD4]">
-              Step {isReady ? "02 complete" : "02 in progress"}
+              {t(
+                isReady
+                  ? "workspace.firstSource.stepComplete"
+                  : "workspace.firstSource.stepProgress",
+              )}
             </p>
             <h2
               id="next-steps-heading"
               className="mt-1 text-base font-semibold tracking-[-0.02em] text-white"
             >
               {isReady
-                ? "Your first source is ready"
-                : "Nexus is preparing your first source"}
+                ? t("workspace.firstSource.readyTitle")
+                : t("workspace.firstSource.preparingTitle")}
             </h2>
           </div>
         </div>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-[#7E8C89]">
           {isReady
-            ? "Open the document to preview it or generate a summary, then select it in Ask Nexus for your first cited answer."
-            : `${document.originalName} will become available for preview, summarization, and chat when processing finishes.`}
+            ? t("workspace.firstSource.readyBody")
+            : t("workspace.firstSource.preparingBody", {
+                name: document.originalName,
+              })}
         </p>
       </div>
       <Link
         href={`/workspace/documents/${document.id}`}
         className="inline-flex h-10 w-fit items-center gap-2 rounded-lg border border-[#2DD4BF]/25 px-4 text-xs font-semibold text-[#D4D4D8] transition-colors hover:bg-[#2DD4BF]/8 hover:text-white"
       >
-        View document
+        {t("workspace.firstSource.view")}
         <ArrowUpRight className="h-3.5 w-3.5" weight="bold" />
       </Link>
     </section>
@@ -463,6 +473,7 @@ function WorkspaceSummary({
   documents: WorkspaceDocument[];
   conversationCount: number;
 }) {
+  const { t } = useTranslation();
   const readyCount = documents.filter(
     (document) => document.status === "READY",
   ).length;
@@ -476,30 +487,38 @@ function WorkspaceSummary({
   );
   const metrics = [
     {
-      label: "Total sources",
+      label: t("workspace.metrics.totalSources"),
       value: documents.length.toString(),
       detail: formatBytes(totalBytes),
     },
     {
-      label: "Ready to ask",
+      label: t("workspace.metrics.readyToAsk"),
       value: readyCount.toString(),
-      detail: readyCount === 1 ? "searchable document" : "searchable documents",
+      detail: t(
+        readyCount === 1
+          ? "workspace.metrics.searchableDocument"
+          : "workspace.metrics.searchableDocuments",
+      ),
     },
     {
-      label: "Processing",
+      label: t("workspace.metrics.processing"),
       value: processingCount.toString(),
-      detail: processingCount > 0 ? "preparing now" : "queue is clear",
+      detail: t(
+        processingCount > 0
+          ? "workspace.metrics.preparingNow"
+          : "workspace.metrics.queueClear",
+      ),
     },
     {
-      label: "Conversations",
+      label: t("workspace.metrics.conversations"),
       value: conversationCount.toString(),
-      detail: "saved in Ask Nexus",
+      detail: t("workspace.metrics.savedInAsk"),
     },
   ];
 
   return (
     <section
-      aria-label="Workspace summary"
+      aria-label={t("workspace.metrics.aria")}
       className="mt-6 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/8 sm:grid-cols-2 xl:grid-cols-4"
     >
       {metrics.map(({ label, value, detail }) => (
@@ -526,16 +545,18 @@ function ConversationPanel({
 }: {
   conversations: ConversationSummary[];
 }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage === "am" ? "am-ET" : "en";
   return (
     <aside className="overflow-hidden rounded-xl border border-white/10 bg-[#0B0B0D]">
       <div className="border-b border-white/8 px-5 py-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold tracking-[-0.025em] text-white">
-              Ask Nexus
+              {t("workspace.conversations.title")}
             </h2>
             <p className="mt-1 text-xs leading-5 text-[#71717A]">
-              Continue a saved conversation or start with new sources.
+              {t("workspace.conversations.description")}
             </p>
           </div>
           <ChatCenteredDots
@@ -560,6 +581,7 @@ function ConversationPanel({
                   <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.1em] text-[#52525B]">
                     {formatDate(
                       conversation.lastMessageAt ?? conversation.createdAt,
+                      locale,
                     )}
                   </p>
                 </div>
@@ -570,7 +592,7 @@ function ConversationPanel({
           <div className="px-3 py-8 text-center">
             <Sparkle className="mx-auto h-5 w-5 text-[#3F3F46]" />
             <p className="mt-3 text-xs leading-5 text-[#71717A]">
-              Your source-grounded conversations will appear here.
+              {t("workspace.conversations.empty")}
             </p>
           </div>
         )}
@@ -579,8 +601,8 @@ function ConversationPanel({
           className="mt-2 flex h-10 items-center justify-between rounded-lg bg-[#2DD4BF]/9 px-3.5 text-xs font-semibold text-[#5EEAD4] transition-colors hover:bg-[#2DD4BF]/14"
         >
           {conversations.length > 0
-            ? "Open conversation history"
-            : "Start your first chat"}
+            ? t("workspace.conversations.openHistory")
+            : t("workspace.conversations.startFirst")}
           <ArrowRight className="h-3.5 w-3.5" weight="bold" />
         </Link>
       </div>
@@ -589,6 +611,8 @@ function ConversationPanel({
 }
 
 function DocumentList({ documents }: { documents: WorkspaceDocument[] }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage === "am" ? "am-ET" : "en";
   return (
     <section
       aria-labelledby="documents-heading"
@@ -600,17 +624,17 @@ function DocumentList({ documents }: { documents: WorkspaceDocument[] }) {
             id="documents-heading"
             className="text-lg font-semibold tracking-[-0.025em] text-white"
           >
-            Recent documents
+            {t("workspace.recentDocuments.title")}
           </h2>
           <p className="mt-1 text-sm text-[#71717A]">
-            Open a source to preview, summarize, or check its status.
+            {t("workspace.recentDocuments.description")}
           </p>
         </div>
         <Link
           href="/workspace/documents"
           className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3.5 text-xs font-semibold text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/35 hover:bg-[#2DD4BF]/8 hover:text-white"
         >
-          View all
+          {t("workspace.recentDocuments.viewAll")}
           <ArrowRight className="h-3.5 w-3.5" weight="bold" />
         </Link>
       </div>
@@ -635,7 +659,7 @@ function DocumentList({ documents }: { documents: WorkspaceDocument[] }) {
                 </h3>
                 <p className="mt-1 text-xs text-[#71717A]">
                   {formatBytes(document.sizeBytes)} •{" "}
-                  {formatDate(document.createdAt)}
+                  {formatDate(document.createdAt, locale)}
                 </p>
               </div>
             </div>
@@ -648,6 +672,7 @@ function DocumentList({ documents }: { documents: WorkspaceDocument[] }) {
 }
 
 function StatusLabel({ status }: { status: string }) {
+  const { t } = useTranslation();
   const normalized = status.replaceAll("_", " ").toLowerCase();
   const isReady = status === "READY";
   const isFailed = status === "FAILED";
@@ -661,22 +686,25 @@ function StatusLabel({ status }: { status: string }) {
             : "border-white/10 bg-white/5 text-[#A1A1AA]"
       }`}
     >
-      {normalized}
+      {t(`documents.status.${status.replace("OCR_", "").toLowerCase()}`, {
+        defaultValue: normalized,
+      })}
     </span>
   );
 }
 
 function WorkspaceNav({ documentCount, onUpload }: { documentCount: number; onUpload: () => void }) {
+  const { t } = useTranslation();
   return (
     <>
-      <Link href="/" className="flex w-fit items-center gap-2.5 px-2" aria-label="NexusOps home">
+      <Link href="/" className="flex w-fit items-center gap-2.5 px-2" aria-label={t("nav.homeAria")}>
         <span className="h-2.5 w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_18px_rgba(45,212,191,0.65)]" />
         <span className="text-sm font-semibold tracking-[0.17em] text-white">
           NEXUS<span className="text-[#71717A]">/OPS</span>
         </span>
       </Link>
 
-      <nav aria-label="Workspace navigation" className="mt-10 space-y-1">
+      <nav aria-label={t("nav.workspaceNavigation")} className="mt-10 space-y-1">
         {navItems.map(({ label, icon: Icon, href, active }) =>
           href ? (
             <Link
@@ -686,12 +714,12 @@ function WorkspaceNav({ documentCount, onUpload }: { documentCount: number; onUp
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-[#2DD4BF]/10 text-[#5EEAD4]" : "text-[#8B8B95] hover:bg-white/5 hover:text-white"}`}
             >
               <Icon className="h-4 w-4" weight={active ? "fill" : "regular"} />
-              {label}
+              {t(label)}
             </Link>
           ) : (
             <button key={label} type="button" disabled className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[#52525B]">
               <Icon className="h-4 w-4" />
-              {label}
+              {t(label)}
             </button>
           ),
         )}
@@ -701,13 +729,17 @@ function WorkspaceNav({ documentCount, onUpload }: { documentCount: number; onUp
         {documentCount > 0 ? (
           <>
             <MagnifyingGlass className="h-4 w-4 text-[#5EEAD4]" />
-            <p className="mt-3 text-xs leading-5 text-[#71717A]">Your library contains {documentCount} {documentCount === 1 ? "document" : "documents"}.</p>
+            <p className="mt-3 text-xs leading-5 text-[#71717A]">
+              {t("workspace.libraryCount", { count: documentCount })}
+            </p>
           </>
         ) : (
-          <p className="text-xs leading-5 text-[#71717A]">Add your first source to activate document search.</p>
+          <p className="text-xs leading-5 text-[#71717A]">
+            {t("workspace.emptyLibraryHint")}
+          </p>
         )}
         <button type="button" onClick={onUpload} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#D4D4D8] hover:text-white">
-          Upload document
+          {t("documents.uploadDocument")}
           <ArrowRight className="h-3.5 w-3.5" weight="bold" />
         </button>
       </div>

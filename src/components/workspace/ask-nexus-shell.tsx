@@ -28,12 +28,14 @@ import type {
   ConversationSummary,
   RagUIMessage,
 } from "@/lib/rag/types";
+import { useTranslation } from "react-i18next";
+import { LanguageToggle } from "@/components/language-toggle";
 
 const prompts = [
-  "What are the most important facts in these documents?",
-  "Which dates and deadlines should I know about?",
-  "Find any amounts, fees, or payment terms.",
-  "Where do these documents disagree?",
+  "chat.promptFacts",
+  "chat.promptDates",
+  "chat.promptAmounts",
+  "chat.promptConflicts",
 ];
 
 type ConversationResponse = {
@@ -48,6 +50,7 @@ export function AskNexusShell({
   documents: WorkspaceDocument[];
   initialConversations: ConversationSummary[];
 }) {
+  const { t } = useTranslation();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [chatStarted, setChatStarted] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -158,8 +161,8 @@ export function AskNexusShell({
     clearError();
     setResponseProgress({
       stage: "validating",
-      label: "Starting document search",
-      detail: "Opening a live response and checking the selected sources.",
+      label: t("chat.progress.validating.label"),
+      detail: t("chat.progress.validating.detail"),
     });
     void sendMessage(
       { text: question },
@@ -207,7 +210,7 @@ export function AskNexusShell({
       });
       if (!response.ok) {
         const message = await response.text();
-        throw new Error(message || "The conversation could not be loaded.");
+        throw new Error(message || t("chat.loadingConversation"));
       }
 
       const payload = (await response.json()) as ConversationResponse;
@@ -232,7 +235,7 @@ export function AskNexusShell({
       setHistoryError(
         loadError instanceof Error
           ? loadError.message
-          : "The conversation could not be loaded.",
+          : t("chat.loadingConversation"),
       );
     } finally {
       setLoadingConversationId(null);
@@ -241,7 +244,11 @@ export function AskNexusShell({
 
   const deleteConversation = async (id: string) => {
     const conversation = conversations.find((item) => item.id === id);
-    if (!conversation || !window.confirm(`Delete “${conversation.title}”? This cannot be undone.`)) return;
+    if (
+      !conversation ||
+      !window.confirm(t("chat.deleteConfirm", { title: conversation.title }))
+    )
+      return;
 
     setDeletingConversationId(id);
     setHistoryError(null);
@@ -249,13 +256,17 @@ export function AskNexusShell({
       const response = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
       if (!response.ok) {
         const message = await response.text();
-        throw new Error(message || "The conversation could not be deleted.");
+        throw new Error(message || t("chat.deletingConversation"));
       }
 
       setConversations((current) => current.filter((item) => item.id !== id));
       if (conversationId === id) startNewChat();
     } catch (deleteError) {
-      setHistoryError(deleteError instanceof Error ? deleteError.message : "The conversation could not be deleted.");
+      setHistoryError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : t("chat.deletingConversation"),
+      );
     } finally {
       setDeletingConversationId(null);
     }
@@ -280,9 +291,9 @@ export function AskNexusShell({
 
       {mobileNavOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />
+          <button type="button" className="absolute inset-0 bg-black/70" aria-label={t("nav.closeNavigation")} onClick={() => setMobileNavOpen(false)} />
           <aside className="relative flex h-full w-[min(20rem,88vw)] flex-col border-r border-white/10 bg-[#08080A] px-4 py-5">
-            <button type="button" onClick={() => setMobileNavOpen(false)} className="absolute right-4 top-5 rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white" aria-label="Close navigation">
+            <button type="button" onClick={() => setMobileNavOpen(false)} className="absolute right-4 top-5 rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white" aria-label={t("nav.closeNavigation")}>
               <X className="h-5 w-5" />
             </button>
             <AskNav
@@ -302,15 +313,18 @@ export function AskNexusShell({
       <div className="relative flex min-h-dvh flex-col lg:pl-64">
         <header className="sticky top-0 z-20 flex h-17 items-center justify-between border-b border-white/8 bg-[#050505]/88 px-4 backdrop-blur-xl sm:px-7 lg:px-10">
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setMobileNavOpen(true)} className="rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-[#5EEAD4] lg:hidden" aria-label="Open navigation">
+            <button type="button" onClick={() => setMobileNavOpen(true)} className="rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-[#5EEAD4] lg:hidden" aria-label={t("nav.openNavigation")}>
               <SidebarSimple className="h-5 w-5" />
             </button>
             <div>
-              <p className="text-sm font-medium text-white">Ask Nexus</p>
-              <p className="hidden text-xs text-[#71717A] sm:block">Answers grounded in the sources you choose</p>
+              <p className="text-sm font-medium text-white">{t("nav.askNexus")}</p>
+              <p className="hidden text-xs text-[#71717A] sm:block">{t("chat.headerDescription")}</p>
             </div>
           </div>
-          <UserButton appearance={{ elements: { userButtonBox: "h-9 w-9 rounded-lg", avatarBox: "h-9 w-9 rounded-lg" } }} />
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            <UserButton appearance={{ elements: { userButtonBox: "h-9 w-9 rounded-lg", avatarBox: "h-9 w-9 rounded-lg" } }} />
+          </div>
         </header>
 
         {historyError ? (
@@ -323,7 +337,7 @@ export function AskNexusShell({
               type="button"
               onClick={() => setHistoryError(null)}
               className="shrink-0 text-red-300 hover:text-white"
-              aria-label="Dismiss conversation error"
+              aria-label={t("common.dismissError")}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -345,13 +359,13 @@ export function AskNexusShell({
                   <FileText className="h-4 w-4" weight="fill" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-xs font-medium text-[#E4E4E7]">{selectedIds.length} {selectedIds.length === 1 ? "source" : "sources"} selected</span>
-                  <span className="block truncate text-[11px] text-[#71717A] group-hover:text-[#A1A1AA]">Change document context</span>
+                  <span className="block text-xs font-medium text-[#E4E4E7]">{t(selectedIds.length === 1 ? "chat.sourceSelected" : "chat.sourcesSelected", { count: selectedIds.length })}</span>
+                  <span className="block truncate text-[11px] text-[#71717A] group-hover:text-[#A1A1AA]">{t("chat.changeContext")}</span>
                 </span>
               </button>
               <button type="button" onClick={startNewChat} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white active:translate-y-px">
                 <Plus className="h-3.5 w-3.5" weight="bold" />
-                New chat
+                {t("chat.newChat")}
               </button>
             </div>
 
@@ -361,12 +375,12 @@ export function AskNexusShell({
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#2DD4BF]/20 bg-[#09100F] text-[#5EEAD4]">
                     <Sparkle className="h-5 w-5" weight="fill" />
                   </div>
-                  <h1 className="mt-6 text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl">What do you need to know?</h1>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-[#8B8B95]">Ask across the selected documents. You can change the source set at any point in the conversation.</p>
+                  <h1 className="mt-6 text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl">{t("chat.emptyTitle")}</h1>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-[#8B8B95]">{t("chat.emptyDescription")}</p>
                   <div className="mt-8 grid gap-2 sm:grid-cols-2">
                     {prompts.map((prompt) => (
-                      <button key={prompt} type="button" onClick={() => sendQuestion(prompt)} className="min-h-16 rounded-lg border border-white/10 bg-[#0B0B0D] px-4 py-3 text-left text-sm leading-5 text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#0D1312] hover:text-white active:translate-y-px">
-                        {prompt}
+                      <button key={prompt} type="button" onClick={() => sendQuestion(t(prompt))} className="min-h-16 rounded-lg border border-white/10 bg-[#0B0B0D] px-4 py-3 text-left text-sm leading-5 text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#0D1312] hover:text-white active:translate-y-px">
+                        {t(prompt)}
                       </button>
                     ))}
                   </div>
@@ -407,7 +421,7 @@ export function AskNexusShell({
                               </StreamingMarkdown>
                               {sources.length ? (
                                 <div className="mt-4 rounded-lg border border-white/8 bg-[#0B0B0D] p-3">
-                                  <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#5EEAD4]">Sources</p>
+                                  <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#5EEAD4]">{t("chat.sources")}</p>
                                   <div className="mt-2 flex flex-wrap gap-2">
                                     {sources.map((source) => (
                                       <Link
@@ -419,7 +433,7 @@ export function AskNexusShell({
                                         <span className="max-w-48 truncate">{source.documentName}</span>
                                         {source.pageStart ? (
                                           <span className="shrink-0 text-[#5E5E66]">
-                                            p. {source.pageStart}
+                                            {t("common.page")} {source.pageStart}
                                             {source.pageEnd && source.pageEnd !== source.pageStart
                                               ? `-${source.pageEnd}`
                                               : ""}
@@ -442,12 +456,14 @@ export function AskNexusShell({
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2DD4BF]/10 text-[#5EEAD4]"><Sparkle className="h-3.5 w-3.5" weight="fill" /></span>
                         <div className="pt-1" aria-live="polite">
                           <p className="text-sm font-medium text-[#D4D4D8]">
-                            {responseProgress?.label ||
-                              "Opening live document search"}
+                            {t(
+                              `chat.progress.${responseProgress?.stage ?? "validating"}.label`,
+                            )}
                           </p>
                           <p className="mt-1 text-xs leading-5 text-[#71717A]">
-                            {responseProgress?.detail ||
-                              "Preparing the grounded context before the first words arrive."}
+                            {t(
+                              `chat.progress.${responseProgress?.stage ?? "validating"}.detail`,
+                            )}
                           </p>
                           <div className="mt-3 h-0.5 w-28 animate-pulse rounded bg-[#2DD4BF]/45" />
                         </div>
@@ -463,34 +479,34 @@ export function AskNexusShell({
                   {error ? (
                     <div role="alert" className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-red-400/15 bg-red-400/[0.05] px-3 py-2.5 text-xs leading-5 text-red-200">
                       <span>{error.message}</span>
-                      <button type="button" onClick={clearError} className="shrink-0 text-red-300 hover:text-white" aria-label="Dismiss error">
+                      <button type="button" onClick={clearError} className="shrink-0 text-red-300 hover:text-white" aria-label={t("common.dismissError")}>
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ) : null}
                   {selectedIds.length === 0 ? (
-                    <button type="button" onClick={() => setSelectorOpen(true)} className="mb-2 text-xs font-medium text-amber-300 hover:text-amber-200">Select at least one document to continue</button>
+                    <button type="button" onClick={() => setSelectorOpen(true)} className="mb-2 text-xs font-medium text-amber-300 hover:text-amber-200">{t("chat.selectDocument")}</button>
                   ) : null}
                   <div className="rounded-xl border border-white/12 bg-[#111113] p-2 shadow-[0_18px_60px_rgba(0,0,0,0.35)] focus-within:border-[#2DD4BF]/45">
-                    <label htmlFor="nexus-question" className="sr-only">Ask a question about selected documents</label>
-                    <textarea id="nexus-question" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(); } }} rows={2} placeholder="Ask a question about your documents" className="max-h-40 min-h-14 w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-white outline-none placeholder:text-[#5E5E66]" />
+                    <label htmlFor="nexus-question" className="sr-only">{t("chat.questionLabel")}</label>
+                    <textarea id="nexus-question" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendQuestion(); } }} rows={2} placeholder={t("chat.questionPlaceholder")} className="max-h-40 min-h-14 w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-white outline-none placeholder:text-[#5E5E66]" />
                     <div className="flex items-center justify-between gap-3 px-1 pb-1">
                       <button type="button" onClick={() => setSelectorOpen(true)} className="inline-flex h-8 items-center gap-2 rounded-md px-2 text-xs text-[#8B8B95] hover:bg-white/5 hover:text-white">
                         <FileText className="h-3.5 w-3.5" />
-                        {selectedIds.length} selected
+                        {t("chat.selected", { count: selectedIds.length })}
                       </button>
                       {isResponding ? (
-                        <button type="button" onClick={stop} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E4E4E7] text-[#09090B] hover:bg-white active:translate-y-px" aria-label="Stop response">
+                        <button type="button" onClick={stop} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E4E4E7] text-[#09090B] hover:bg-white active:translate-y-px" aria-label={t("chat.stop")}>
                           <X className="h-4 w-4" weight="bold" />
                         </button>
                       ) : (
-                        <button type="submit" disabled={!draft.trim() || selectedIds.length === 0} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2DD4BF] text-[#04100E] transition-colors hover:bg-[#5EEAD4] active:translate-y-px disabled:cursor-not-allowed disabled:bg-[#263B38] disabled:text-[#718984]" aria-label="Send question">
+                        <button type="submit" disabled={!draft.trim() || selectedIds.length === 0} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2DD4BF] text-[#04100E] transition-colors hover:bg-[#5EEAD4] active:translate-y-px disabled:cursor-not-allowed disabled:bg-[#263B38] disabled:text-[#718984]" aria-label={t("chat.send")}>
                           <ArrowUp className="h-4 w-4" weight="bold" />
                         </button>
                       )}
                     </div>
                   </div>
-                  <p className="mt-2 text-center text-[10px] text-[#52525B]">Answers should be verified against the cited source passages.</p>
+                  <p className="mt-2 text-center text-[10px] text-[#52525B]">{t("chat.verification")}</p>
                 </form>
               </div>
             </div>
@@ -501,13 +517,13 @@ export function AskNexusShell({
       <Dialog open={selectorOpen} onOpenChange={setSelectorOpen}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden border border-white/10 bg-[#0B0B0D] p-0 text-white sm:max-w-xl">
           <DialogHeader className="border-b border-white/8 px-5 py-5 text-left sm:px-6">
-            <DialogTitle className="text-lg tracking-[-0.025em]">Choose document context</DialogTitle>
-            <DialogDescription className="text-[#8B8B95]">Add or remove sources without clearing this conversation.</DialogDescription>
+            <DialogTitle className="text-lg tracking-[-0.025em]">{t("chat.chooseContext")}</DialogTitle>
+            <DialogDescription className="text-[#8B8B95]">{t("chat.chooseContextDescription")}</DialogDescription>
           </DialogHeader>
           <DocumentPicker documents={documents} selectedIds={selectedIds} onToggle={toggleDocument} compact />
           <div className="flex items-center justify-between border-t border-white/8 bg-[#08080A] px-5 py-4 sm:px-6">
-            <p className="text-xs text-[#71717A]">{selectedIds.length} selected</p>
-            <button type="button" onClick={() => setSelectorOpen(false)} className="h-10 rounded-lg bg-[#2DD4BF] px-4 text-sm font-semibold text-[#04100E] hover:bg-[#5EEAD4] active:translate-y-px">Update context</button>
+            <p className="text-xs text-[#71717A]">{t("chat.selected", { count: selectedIds.length })}</p>
+            <button type="button" onClick={() => setSelectorOpen(false)} className="h-10 rounded-lg bg-[#2DD4BF] px-4 text-sm font-semibold text-[#04100E] hover:bg-[#5EEAD4] active:translate-y-px">{t("chat.updateContext")}</button>
           </div>
         </DialogContent>
       </Dialog>
@@ -516,19 +532,24 @@ export function AskNexusShell({
 }
 
 function DocumentSetup({ documents, selectedIds, onToggle, onStart }: { documents: WorkspaceDocument[]; selectedIds: string[]; onToggle: (id: string) => void; onStart: () => void }) {
+  const { t } = useTranslation();
   return (
     <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-7 sm:py-14 lg:px-10">
       <div className="max-w-2xl">
         <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#2DD4BF]/20 bg-[#09100F] text-[#5EEAD4]"><ChatCenteredDots className="h-5 w-5" weight="fill" /></span>
-        <h1 className="mt-6 text-[clamp(2.25rem,5vw,4.25rem)] font-medium leading-[1] tracking-[-0.05em]">Choose what Nexus can read.</h1>
-        <p className="mt-4 max-w-xl text-base leading-7 text-[#A1A1AA]">Select one or more documents for this conversation. You can change the selection later.</p>
+        <h1 className="mt-6 text-[clamp(2.25rem,5vw,4.25rem)] font-medium leading-[1] tracking-[-0.05em]">{t("chat.chooseTitle")}</h1>
+        <p className="mt-4 max-w-xl text-base leading-7 text-[#A1A1AA]">{t("chat.chooseDescription")}</p>
       </div>
       <div className="mt-9 overflow-hidden rounded-xl border border-white/10 bg-[#0B0B0D]">
         <DocumentPicker documents={documents} selectedIds={selectedIds} onToggle={onToggle} />
         <div className="flex flex-col gap-3 border-t border-white/8 bg-[#08080A] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p className="text-xs text-[#71717A]">{selectedIds.length ? `${selectedIds.length} ${selectedIds.length === 1 ? "document" : "documents"} in context` : "Select at least one ready document"}</p>
+          <p className="text-xs text-[#71717A]">
+            {selectedIds.length
+              ? t("chat.documentContext", { count: selectedIds.length })
+              : t("chat.selectReadyDocument")}
+          </p>
           <button type="button" onClick={onStart} disabled={selectedIds.length === 0} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#2DD4BF] px-5 text-sm font-semibold text-[#04100E] hover:bg-[#5EEAD4] active:translate-y-px disabled:cursor-not-allowed disabled:bg-[#263B38] disabled:text-[#718984]">
-            Start chat
+            {t("chat.start")}
             <ArrowUp className="h-4 w-4 rotate-90" weight="bold" />
           </button>
         </div>
@@ -538,6 +559,7 @@ function DocumentSetup({ documents, selectedIds, onToggle, onStart }: { document
 }
 
 function DocumentPicker({ documents, selectedIds, onToggle, compact = false }: { documents: WorkspaceDocument[]; selectedIds: string[]; onToggle: (id: string) => void; compact?: boolean }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const filtered = documents.filter((document) => document.originalName.toLowerCase().includes(query.toLowerCase()));
   const readyCount = documents.filter((document) => document.status === "READY").length;
@@ -546,13 +568,13 @@ function DocumentPicker({ documents, selectedIds, onToggle, compact = false }: {
     <div className={compact ? "min-h-0" : ""}>
       <div className="flex flex-col gap-3 border-b border-white/8 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <h2 className="text-sm font-semibold text-white">Workspace documents</h2>
-          <p className="mt-1 text-xs text-[#71717A]">{readyCount} ready for questions</p>
+          <h2 className="text-sm font-semibold text-white">{t("chat.workspaceDocuments")}</h2>
+          <p className="mt-1 text-xs text-[#71717A]">{t("chat.readyForQuestions", { count: readyCount })}</p>
         </div>
         <label className="relative block sm:w-64">
           <MagnifyingGlass className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#5E5E66]" />
-          <span className="sr-only">Search documents</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search documents" className="h-9 w-full rounded-lg border border-white/10 bg-[#111113] pl-9 pr-3 text-xs text-white outline-none placeholder:text-[#5E5E66] focus:border-[#2DD4BF]/45" />
+          <span className="sr-only">{t("chat.searchDocuments")}</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("chat.searchDocuments")} className="h-9 w-full rounded-lg border border-white/10 bg-[#111113] pl-9 pr-3 text-xs text-white outline-none placeholder:text-[#5E5E66] focus:border-[#2DD4BF]/45" />
         </label>
       </div>
       <div className={`${compact ? "max-h-[55dvh]" : "max-h-[27rem]"} overflow-y-auto p-2`}>
@@ -565,7 +587,20 @@ function DocumentPicker({ documents, selectedIds, onToggle, compact = false }: {
               <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${selected ? "bg-[#2DD4BF]/12 text-[#5EEAD4]" : "bg-white/5 text-[#8B8B95]"}`}><Icon className="h-5 w-5" weight="duotone" /></span>
               <span className="min-w-0 flex-1">
                 <span className={`block truncate text-sm font-medium ${selected ? "text-white" : "text-[#D4D4D8]"}`}>{document.originalName}</span>
-                <span className="mt-1 block text-[11px] text-[#71717A]">{selectable ? "Ready to use" : document.status.replaceAll("_", " ").toLowerCase()}</span>
+                <span className="mt-1 block text-[11px] text-[#71717A]">
+                  {selectable
+                    ? t("chat.readyToUse")
+                    : t(
+                        `documents.status.${document.status
+                          .replace("OCR_", "")
+                          .toLowerCase()}`,
+                        {
+                          defaultValue: document.status
+                            .replaceAll("_", " ")
+                            .toLowerCase(),
+                        },
+                      )}
+                </span>
               </span>
               <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${selected ? "border-[#2DD4BF] bg-[#2DD4BF] text-[#04100E]" : "border-white/15 text-transparent"}`}><Check className="h-3 w-3" weight="bold" /></span>
             </button>
@@ -573,8 +608,12 @@ function DocumentPicker({ documents, selectedIds, onToggle, compact = false }: {
         }) : (
           <div className="flex min-h-40 flex-col items-center justify-center px-6 text-center">
             {documents.length === 0 ? <FileText className="h-6 w-6 text-[#3F3F46]" /> : <MagnifyingGlass className="h-6 w-6 text-[#3F3F46]" />}
-            <p className="mt-3 text-sm text-[#8B8B95]">{documents.length === 0 ? "Your workspace has no documents yet." : "No documents match that search."}</p>
-            {documents.length === 0 ? <Link href="/workspace/documents" className="mt-3 text-xs font-semibold text-[#5EEAD4] hover:text-[#99F6E4]">Upload a document</Link> : null}
+            <p className="mt-3 text-sm text-[#8B8B95]">
+              {documents.length === 0
+                ? t("chat.emptyWorkspace")
+                : t("chat.noSearchResults")}
+            </p>
+            {documents.length === 0 ? <Link href="/workspace/documents" className="mt-3 text-xs font-semibold text-[#5EEAD4] hover:text-[#99F6E4]">{t("documents.uploadDocument")}</Link> : null}
           </div>
         )}
       </div>
@@ -601,16 +640,17 @@ function AskNav({
   onDeleteConversation: (id: string) => void;
   deletingConversationId: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <>
-      <Link href="/" className="flex w-fit items-center gap-2.5 px-2" aria-label="NexusOps home">
+      <Link href="/" className="flex w-fit items-center gap-2.5 px-2" aria-label={t("nav.homeAria")}>
         <span className="h-2.5 w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_18px_rgba(45,212,191,0.65)]" />
         <span className="text-sm font-semibold tracking-[0.17em]">NEXUS<span className="text-[#71717A]">/OPS</span></span>
       </Link>
-      <nav className="mt-10 space-y-1" aria-label="Workspace navigation">
-        <Link href="/workspace" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"><House className="h-4 w-4" />Overview</Link>
-        <Link href="/workspace/documents" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"><FileText className="h-4 w-4" />Documents</Link>
-        <Link href="/workspace/ask" aria-current="page" className="flex items-center gap-3 rounded-lg bg-[#2DD4BF]/10 px-3 py-2.5 text-sm text-[#5EEAD4]"><ChatCenteredDots className="h-4 w-4" weight="fill" />Ask Nexus</Link>
+      <nav className="mt-10 space-y-1" aria-label={t("nav.workspaceNavigation")}>
+        <Link href="/workspace" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"><House className="h-4 w-4" />{t("nav.overview")}</Link>
+        <Link href="/workspace/documents" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#8B8B95] hover:bg-white/5 hover:text-white"><FileText className="h-4 w-4" />{t("nav.documents")}</Link>
+        <Link href="/workspace/ask" aria-current="page" className="flex items-center gap-3 rounded-lg bg-[#2DD4BF]/10 px-3 py-2.5 text-sm text-[#5EEAD4]"><ChatCenteredDots className="h-4 w-4" weight="fill" />{t("nav.askNexus")}</Link>
         <div className="ml-5 mt-2 border-l border-white/8 pl-3">
           <button
             type="button"
@@ -618,7 +658,7 @@ function AskNav({
             className="mb-2 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-medium text-[#A1A1AA] transition-colors hover:bg-[#2DD4BF]/8 hover:text-[#5EEAD4] active:translate-y-px focus-visible:outline-2 focus-visible:outline-[#5EEAD4]"
           >
             <Plus className="h-3.5 w-3.5" weight="bold" />
-            New chat
+            {t("chat.newChat")}
           </button>
           {conversations.length > 0 ? (
             <div className="space-y-0.5">
@@ -647,8 +687,10 @@ function AskNav({
                       onClick={() => onDeleteConversation(conversation.id)}
                       disabled={loading || deletingConversationId === conversation.id}
                       className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#52525B] opacity-0 transition-all hover:bg-red-400/10 hover:text-red-300 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[#5EEAD4] group-hover:opacity-100 disabled:cursor-wait disabled:opacity-50"
-                      aria-label={`Delete conversation: ${conversation.title}`}
-                      title="Delete conversation"
+                      aria-label={t("chat.deleteConversationAria", {
+                        title: conversation.title,
+                      })}
+                      title={t("chat.deleteConversation")}
                     >
                       <Trash className="h-3.5 w-3.5" />
                     </button>
@@ -658,14 +700,16 @@ function AskNav({
             </div>
           ) : (
             <p className="px-2 py-2 text-[11px] leading-4 text-[#52525B]">
-              Your recent conversations will appear here.
+              {t("chat.historyEmpty")}
             </p>
           )}
         </div>
       </nav>
       <div className="mt-auto rounded-xl border border-white/8 bg-[#0D0D0F] p-4">
         <Sparkle className="h-4 w-4 text-[#5EEAD4]" />
-        <p className="mt-3 text-xs leading-5 text-[#71717A]">Choose from {documentCount} stored {documentCount === 1 ? "document" : "documents"} and keep the answer grounded.</p>
+        <p className="mt-3 text-xs leading-5 text-[#71717A]">
+          {t("chat.libraryHint", { count: documentCount })}
+        </p>
       </div>
     </>
   );

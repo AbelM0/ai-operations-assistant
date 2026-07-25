@@ -4,15 +4,17 @@ import { motion } from "motion/react";
 import { ArrowRight } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
+import { useTranslation } from "react-i18next";
 
 const footerLinks = [
-  { label: "Capabilities", href: "#features" },
-  { label: "Workflow", href: "#workflow" },
-  { label: "Inside Nexus", href: "#product" },
+  { label: "nav.capabilities", href: "#features" },
+  { label: "nav.workflow", href: "#workflow" },
+  { label: "nav.insideNexus", href: "#product" },
 ];
 
 export function CtaFooter() {
   const { isSignedIn } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <footer className="px-5 pb-6 pt-24 sm:px-8 md:pt-36">
@@ -31,10 +33,10 @@ export function CtaFooter() {
         <div className="relative z-10 flex flex-col justify-between gap-12 lg:flex-row lg:items-end">
           <div>
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#0F766E]">
-              Your next grounded answer starts here
+              {t("landing.footerEyebrow")}
             </p>
             <h2 className="mt-8 max-w-4xl text-balance text-[clamp(3rem,6.2vw,6.5rem)] font-medium leading-[0.92] tracking-[-0.055em]">
-              Give your documents a place to answer back.
+              {t("landing.footerTitle")}
             </h2>
           </div>
           <div className="shrink-0">
@@ -46,14 +48,16 @@ export function CtaFooter() {
                 href={isSignedIn ? "/workspace" : "/sign-up"}
                 className="flex h-14 items-center justify-center gap-3 rounded-lg bg-[#050505] px-7 text-sm font-semibold text-white"
               >
-                {isSignedIn ? "Open your workspace" : "Create your workspace"}
+                {isSignedIn
+                  ? t("landing.openWorkspace")
+                  : t("landing.createWorkspace")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
             <p className="mt-4 text-center text-xs text-[#0F766E]">
               {isSignedIn
-                ? "Your document dashboard is ready"
-                : "Upload your first source after sign-up"}
+                ? t("landing.dashboardReady")
+                : t("landing.uploadAfterSignup")}
             </p>
           </div>
         </div>
@@ -73,12 +77,12 @@ export function CtaFooter() {
               whileHover={{ y: -2, color: "#FFFFFF" }}
               className="text-[#71717A]"
             >
-              {link.label}
+              {t(link.label)}
             </motion.a>
           ))}
           <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }}>
             <Link href="/sign-in" className="font-medium text-[#D4D4D8]">
-              Log in
+              {t("nav.login")}
             </Link>
           </motion.div>
         </div>

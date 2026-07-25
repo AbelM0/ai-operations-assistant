@@ -22,11 +22,7 @@ export default async function WorkspacePage() {
 
   const user = await currentUser();
   const firstName = user?.firstName || user?.username || "there";
-  const appUser = await requireAppUser();
-
-  if (!appUser) {
-    redirect("/sign-in?redirect_url=/workspace");
-  }
+  const appUser = await requireAppUser(userId);
 
   const [documentsResult, conversationsResult] = await Promise.all([
     supabaseAdmin

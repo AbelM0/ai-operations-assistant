@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sparkle,
 } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 
 const container: Variants = {
   hidden: {},
@@ -28,32 +29,25 @@ const item: Variants = {
 
 const workflowPanels = [
   {
-    title: "Upload",
-    description: "Add a PDF or scanned image to your private workspace.",
+    key: "upload",
     icon: Scan,
-    detail: "Nexus extracts text, preserves page context, and prepares the source for search.",
   },
   {
-    title: "Review",
-    description: "Preview the file and generate a readable document summary.",
+    key: "review",
     icon: FileText,
-    detail: "Long documents are compressed in stages and the final summary streams as it is written.",
   },
   {
-    title: "Ask",
-    description: "Choose exactly which ready documents Nexus can use.",
+    key: "ask",
     icon: Sparkle,
-    detail: "Semantic and keyword retrieval find relevant passages before the answer begins.",
   },
   {
-    title: "Continue",
-    description: "Return to saved conversations without losing document context.",
+    key: "continue",
     icon: ChatText,
-    detail: "Add or remove sources during a chat and keep every response tied to citations.",
   },
 ];
 
 function SectionIntro() {
+  const { t } = useTranslation();
   return (
     <motion.div
       initial={{ opacity: 0, y: 28 }}
@@ -63,19 +57,19 @@ function SectionIntro() {
       className="mb-16 flex flex-col justify-between gap-8 md:mb-20 md:flex-row md:items-end"
     >
       <h2 className="max-w-3xl text-balance text-[clamp(2.5rem,5vw,5rem)] font-medium leading-[0.98] tracking-[-0.045em] text-white">
-        Less document work.
+        {t("landing.features.headingLineOne")}
         <br />
-        More verifiable answers.
+        {t("landing.features.headingLineTwo")}
       </h2>
       <p className="max-w-sm text-pretty text-sm leading-6 text-[#A1A1AA] sm:text-base">
-        One workspace connects document processing, streamed summaries,
-        selected-source chat, citations, and conversation history.
+        {t("landing.features.intro")}
       </p>
     </motion.div>
   );
 }
 
 function UploadCard() {
+  const { t } = useTranslation();
   return (
     <motion.article
       variants={item}
@@ -87,10 +81,11 @@ function UploadCard() {
           <Scan className="h-5 w-5" />
         </span>
         <div>
-          <h3 className="text-xl font-medium tracking-[-0.02em] text-white">Scanned files become searchable sources</h3>
+          <h3 className="text-xl font-medium tracking-[-0.02em] text-white">
+            {t("landing.features.searchableTitle")}
+          </h3>
           <p className="mt-3 text-sm leading-6 text-[#A1A1AA]">
-            Nexus processes PDFs and images, tracks document status, and keeps
-            page references available for retrieval.
+            {t("landing.features.searchableBody")}
           </p>
         </div>
       </div>
@@ -123,6 +118,7 @@ function UploadCard() {
 }
 
 function SummaryCard() {
+  const { t } = useTranslation();
   return (
     <motion.article
       variants={item}
@@ -131,26 +127,27 @@ function SummaryCard() {
     >
       <FileText className="h-6 w-6 text-[#5EEAD4]" />
       <h3 className="mt-8 max-w-sm text-2xl font-medium leading-tight tracking-[-0.025em] text-white">
-        Read the document without reading every page.
+        {t("landing.features.summaryTitle")}
       </h3>
       <p className="mt-4 max-w-md text-sm leading-6 text-[#A1A1AA]">
-        Generate a structured summary and watch it stream into the document
-        view as the model writes.
+        {t("landing.features.summaryBody")}
       </p>
       <div className="mt-10 space-y-3">
         <motion.div
           whileHover={{ x: 5 }}
           className="ml-auto w-[86%] rounded-lg rounded-br-sm bg-white p-3 text-xs text-[#09090B]"
         >
-          Summarize the main topics and obligations.
+          {t("landing.features.summaryPrompt")}
         </motion.div>
         <motion.div
           whileHover={{ x: 5 }}
           className="w-[90%] rounded-lg rounded-bl-sm border border-[#2DD4BF]/20 bg-[#0B1513] p-3 text-sm text-[#D4D4D8]"
         >
-          <strong className="font-medium text-white">Main topics</strong>
+          <strong className="font-medium text-white">
+            {t("landing.features.mainTopics")}
+          </strong>
           <br />
-          Reporting duties, payment terms, and termination conditions…
+          {t("landing.features.mainTopicsResult")}
         </motion.div>
       </div>
     </motion.article>
@@ -158,6 +155,12 @@ function SummaryCard() {
 }
 
 function ConversationCard() {
+  const { t } = useTranslation();
+  const conversations = [
+    ["landing.features.conversations.contract", 3],
+    ["landing.features.conversations.report", 1],
+    ["landing.features.conversations.payment", 4],
+  ] as const;
   return (
     <motion.article
       variants={item}
@@ -165,29 +168,28 @@ function ConversationCard() {
       className="relative overflow-hidden rounded-xl border border-white/8 bg-[#151517] p-6 sm:p-8 lg:col-span-5"
     >
       <ChatText className="h-6 w-6 text-[#5EEAD4]" />
-      <h3 className="mt-8 text-2xl font-medium tracking-[-0.025em] text-white">Continue where the question left off.</h3>
+      <h3 className="mt-8 text-2xl font-medium tracking-[-0.025em] text-white">
+        {t("landing.features.continueTitle")}
+      </h3>
       <p className="mt-4 text-sm leading-6 text-[#A1A1AA]">
-        Saved conversation history keeps previous answers and source selections
-        within reach.
+        {t("landing.features.continueBody")}
       </p>
       <div className="mt-9 rounded-lg border border-white/8 bg-[#09090B] p-5">
         <div className="space-y-2">
-          {[
-            ["Contract obligations", "3 sources"],
-            ["Q2 report summary", "1 source"],
-            ["Supplier payment terms", "4 sources"],
-          ].map(([title, sources], index) => (
+          {conversations.map(([titleKey, sourceCount], index) => (
             <motion.div
-              key={title}
+              key={titleKey}
               initial={{ opacity: 0, x: -10 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.08 }}
               className="flex items-center justify-between rounded-md bg-white/[0.035] px-3 py-2.5"
             >
-              <span className="truncate text-xs text-[#D4D4D8]">{title}</span>
+              <span className="truncate text-xs text-[#D4D4D8]">
+                {t(titleKey)}
+              </span>
               <span className="ml-3 font-mono text-[9px] uppercase tracking-[0.1em] text-[#5E5E66]">
-                {sources}
+                {t("landing.features.sourceCount", { count: sourceCount })}
               </span>
             </motion.div>
           ))}
@@ -198,6 +200,12 @@ function ConversationCard() {
 }
 
 function TrustCard() {
+  const { t } = useTranslation();
+  const safeguards = [
+    "landing.features.safeguards.isolated",
+    "landing.features.safeguards.selected",
+    "landing.features.safeguards.citations",
+  ];
   return (
     <motion.article
       variants={item}
@@ -207,21 +215,22 @@ function TrustCard() {
       <div className="grid gap-10 sm:grid-cols-[1fr_0.9fr] sm:items-end">
         <div>
           <ShieldCheck className="h-6 w-6 text-[#5EEAD4]" />
-          <h3 className="mt-8 text-2xl font-medium tracking-[-0.025em] text-white">Answers you can verify.</h3>
+          <h3 className="mt-8 text-2xl font-medium tracking-[-0.025em] text-white">
+            {t("landing.features.verifyTitle")}
+          </h3>
           <p className="mt-4 max-w-md text-sm leading-6 text-[#A1A1AA]">
-            Every response stays grounded in your workspace and keeps the source
-            document close at hand.
+            {t("landing.features.verifyBody")}
           </p>
         </div>
         <div className="space-y-2">
-          {["User-isolated retrieval", "Selected-source context", "Page-aware citations"].map((label) => (
+          {safeguards.map((labelKey) => (
             <motion.div
-              key={label}
+              key={labelKey}
               whileHover={{ x: 5, borderColor: "rgba(45,212,191,0.24)" }}
               className="flex items-center gap-3 rounded-lg border border-white/8 bg-[#09090B] px-4 py-3"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[#2DD4BF]" />
-              <span className="text-xs text-[#D4D4D8]">{label}</span>
+              <span className="text-xs text-[#D4D4D8]">{t(labelKey)}</span>
             </motion.div>
           ))}
         </div>
@@ -232,6 +241,7 @@ function TrustCard() {
 
 function WorkflowAccordion() {
   const [active, setActive] = useState(0);
+  const { t } = useTranslation();
 
   return (
     <div className="mt-28 md:mt-40">
@@ -243,10 +253,10 @@ function WorkflowAccordion() {
         className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
       >
         <h3 className="max-w-xl text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl">
-          One connected workflow.
+          {t("landing.features.workflowTitle")}
         </h3>
         <p className="max-w-sm text-sm leading-6 text-[#71717A]">
-          From raw file to a saved, source-grounded conversation.
+          {t("landing.features.workflowBody")}
         </p>
       </motion.div>
 
@@ -256,7 +266,7 @@ function WorkflowAccordion() {
           const isActive = active === index;
           return (
             <motion.button
-              key={panel.title}
+              key={panel.key}
               type="button"
               onHoverStart={() => setActive(index)}
               onFocus={() => setActive(index)}
@@ -270,7 +280,7 @@ function WorkflowAccordion() {
                 <div className="flex items-center justify-between gap-4">
                   <Icon className="h-5 w-5 shrink-0 text-[#5EEAD4]" />
                   <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#52525B]">
-                    {panel.title}
+                    {t(`landing.features.${panel.key}.title`)}
                   </span>
                 </div>
                 <motion.div
@@ -279,14 +289,14 @@ function WorkflowAccordion() {
                   className="max-w-md"
                 >
                   <h4 className="text-2xl font-medium tracking-[-0.025em] text-white">
-                    {panel.description}
+                    {t(`landing.features.${panel.key}.description`)}
                   </h4>
                   <motion.p
                     animate={{ opacity: isActive ? 1 : 0, height: isActive ? "auto" : 0, marginTop: isActive ? 16 : 0 }}
                     transition={{ duration: 0.42 }}
                     className="overflow-hidden text-sm leading-6 text-[#A1A1AA]"
                   >
-                    {panel.detail}
+                    {t(`landing.features.${panel.key}.detail`)}
                   </motion.p>
                 </motion.div>
               </div>

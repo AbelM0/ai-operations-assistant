@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { Aurora } from "@/components/effects/aurora";
+import { useTranslation } from "react-i18next";
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -28,6 +29,7 @@ const documents = [
 
 export function Hero() {
   const { isSignedIn } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <section className="relative isolate flex min-h-[980px] items-center overflow-hidden px-5 pb-28 pt-40 sm:px-8 lg:min-h-[1060px] lg:pb-40 lg:pt-48">
@@ -51,7 +53,7 @@ export function Hero() {
           custom={0.12}
           className="mb-7 max-w-full text-balance font-mono text-[10px] font-semibold uppercase leading-5 tracking-[0.2em] text-[#5EEAD4] sm:text-[11px] sm:tracking-[0.26em]"
         >
-          Private document intelligence
+          {t("landing.eyebrow")}
         </motion.p>
 
         <motion.h1
@@ -61,7 +63,7 @@ export function Hero() {
           custom={0.2}
           className="w-full max-w-[calc(100vw-2.5rem)] text-balance text-[clamp(2.2rem,7.1vw,7.2rem)] font-medium leading-[0.96] tracking-[-0.055em] text-white sm:max-w-6xl sm:leading-[0.94]"
         >
-          Ask your documents.
+          {t("landing.heroBefore")}
           <br className="sm:hidden" />{" "}
           <motion.span
             aria-hidden="true"
@@ -73,7 +75,7 @@ export function Hero() {
                 "linear-gradient(rgba(45,212,191,0.14),rgba(45,212,191,0.14)),url(https://picsum.photos/seed/nexus-operations/480/240)",
             }}
           />{" "}
-          Keep the evidence close.
+          {t("landing.heroAfter")}
         </motion.h1>
 
         <motion.p
@@ -83,9 +85,7 @@ export function Hero() {
           custom={0.3}
           className="mt-8 w-full max-w-[calc(100vw-2.5rem)] text-pretty text-sm leading-6 text-[#A1A1AA] sm:max-w-2xl sm:text-lg sm:leading-7"
         >
-          Upload PDFs and scanned images, review streamed summaries, then ask
-          questions across the sources you choose. Nexus keeps every answer
-          grounded in your workspace.
+          {t("landing.description")}
         </motion.p>
 
         <motion.div
@@ -107,7 +107,9 @@ export function Hero() {
               href={isSignedIn ? "/workspace" : "/sign-up"}
               className="flex h-13 w-full items-center justify-center gap-2 rounded-lg bg-[#2DD4BF] px-7 text-sm font-semibold text-[#04100E] sm:w-auto"
             >
-              {isSignedIn ? "Open your workspace" : "Create your workspace"}
+              {isSignedIn
+                ? t("landing.openWorkspace")
+                : t("landing.createWorkspace")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </motion.div>
@@ -121,7 +123,7 @@ export function Hero() {
             whileTap={{ scale: 0.97 }}
             className="flex h-13 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#0B0B0D]/70 px-7 text-sm font-semibold text-white sm:w-auto"
           >
-            Explore capabilities
+            {t("landing.exploreCapabilities")}
           </motion.a>
         </motion.div>
 
@@ -137,12 +139,12 @@ export function Hero() {
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#2DD4BF]" />
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#71717A]">
-                  Nexus workspace
+                  {t("landing.nexusWorkspace")}
                 </span>
               </div>
               <div className="hidden items-center gap-4 font-mono text-[10px] text-[#52525B] sm:flex">
-                <span>3 SOURCES SELECTED</span>
-                <span>PRIVATE WORKSPACE</span>
+                <span>{t("landing.sourcesSelected")}</span>
+                <span>{t("common.privateWorkspace")}</span>
               </div>
             </div>
 
@@ -150,7 +152,7 @@ export function Hero() {
               <div className="border-b border-white/8 p-5 sm:p-7 lg:border-b-0 lg:border-r">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-white">
-                    Document stream
+                    {t("landing.documentStream")}
                   </p>
                   <motion.button
                     whileHover={{
@@ -159,13 +161,13 @@ export function Hero() {
                     }}
                     whileTap={{ scale: 0.95 }}
                     className="rounded-md border border-[#2DD4BF]/25 p-2 text-[#5EEAD4]"
-                    aria-label="Add document"
+                    aria-label={t("landing.addDocument")}
                   >
                     <FileText className="h-4 w-4" />
                   </motion.button>
                 </div>
                 <div className="mt-6 space-y-2">
-                  {documents.map(([name, state], index) => (
+                  {documents.map(([name], index) => (
                     <motion.div
                       key={name}
                       initial={{ opacity: 0, x: -18 }}
@@ -184,14 +186,14 @@ export function Hero() {
                         </span>
                       </div>
                       <span className="ml-3 font-mono text-[9px] uppercase tracking-[0.12em] text-[#71717A]">
-                        {state}
+                        {t("documents.status.ready")}
                       </span>
                     </motion.div>
                   ))}
                 </div>
                 <div className="mt-8 rounded-lg border border-dashed border-[#2DD4BF]/20 bg-[#2DD4BF]/[0.03] p-5 text-center">
                   <p className="text-xs text-[#A1A1AA]">
-                    Drop business files here
+                    {t("landing.dropFiles")}
                   </p>
                   <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.14em] text-[#52525B]">
                     PDF, JPG, PNG, WEBP
@@ -206,10 +208,10 @@ export function Hero() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">
-                      Ask Nexus
+                      {t("nav.askNexus")}
                     </p>
                     <p className="mt-0.5 text-xs text-[#71717A]">
-                      Grounded in the 3 documents you selected
+                      {t("landing.groundedInThree")}
                     </p>
                   </div>
                 </div>
@@ -221,7 +223,7 @@ export function Hero() {
                     transition={{ delay: 1.15, duration: 0.55 }}
                     className="ml-auto max-w-[88%] rounded-xl rounded-br-sm bg-white px-4 py-3 text-sm leading-6 text-[#09090B]"
                   >
-                    Summarize the main obligations in these documents.
+                    {t("landing.sampleQuestion")}
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
@@ -230,18 +232,16 @@ export function Hero() {
                     className="mt-4 max-w-[92%] rounded-xl rounded-bl-sm border border-[#2DD4BF]/15 bg-[#101817] px-4 py-4"
                   >
                     <p className="text-sm leading-6 text-[#D4D4D8]">
-                      The documents establish three main obligations: monthly
-                      delivery reporting [S1], payment within 30 days [S2], and
-                      written notice before schedule changes [S3].
+                      {t("landing.sampleAnswer")}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.1em] text-[#5EEAD4]">
-                      {["S1 · page 4", "S2 · page 7", "S3 · page 11"].map(
-                        (source) => (
+                      {[["S1", 4], ["S2", 7], ["S3", 11]].map(
+                        ([source, page]) => (
                           <span
                             key={source}
                             className="rounded-md border border-[#2DD4BF]/20 px-2 py-1"
                           >
-                            {source}
+                            {t("landing.sourcePage", { source, page })}
                           </span>
                         ),
                       )}
@@ -252,7 +252,7 @@ export function Hero() {
                 <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-[#0D0D0F] px-4 py-3 text-[#71717A]">
                   <MagnifyingGlass className="h-4 w-4" />
                   <span className="text-xs">
-                    Ask a follow-up about the selected documents…
+                    {t("landing.followUpPlaceholder")}
                   </span>
                 </div>
               </div>

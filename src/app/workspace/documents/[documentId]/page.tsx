@@ -17,8 +17,7 @@ export default async function DocumentPage({ params }: PageProps<"/workspace/doc
   const { documentId } = await params;
   if (!userId) redirect(`/sign-in?redirect_url=/workspace/documents/${documentId}`);
 
-  const appUser = await requireAppUser();
-  if (!appUser) redirect(`/sign-in?redirect_url=/workspace/documents/${documentId}`);
+  const appUser = await requireAppUser(userId);
 
   const { data: document, error } = await supabaseAdmin
     .from("documents")

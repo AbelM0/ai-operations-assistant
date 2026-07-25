@@ -1,19 +1,21 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 const tags = [
-  "Document OCR",
-  "Selected-source chat",
-  "Source-backed answers",
-  "Conversation history",
-  "Hybrid retrieval",
-  "Page-aware citations",
-  "Automatic summaries",
-  "Live response streaming",
+  "landing.marquee.ocr",
+  "landing.marquee.selectedChat",
+  "landing.marquee.groundedAnswers",
+  "landing.marquee.history",
+  "landing.marquee.retrieval",
+  "landing.marquee.citations",
+  "landing.marquee.summaries",
+  "landing.marquee.streaming",
 ];
 
 function MarqueeRow({ reverse = false }: { reverse?: boolean }) {
+  const { t } = useTranslation();
   const items = reverse ? [...tags].reverse() : tags;
   return (
     <div className="flex overflow-hidden">
@@ -27,7 +29,7 @@ function MarqueeRow({ reverse = false }: { reverse?: boolean }) {
             key={`${tag}-${index}`}
             className="whitespace-nowrap rounded-full border border-white/8 bg-[#111113] px-5 py-2.5 text-xs text-[#A1A1AA]"
           >
-            {tag}
+            {t(tag)}
           </span>
         ))}
       </motion.div>

@@ -1,10 +1,19 @@
 import "server-only";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-export async function requireAppUser() {
-  const { userId } = await auth();
+type AppUser = {
+  id: string;
+  clerkId: string;
+};
+
+export async function requireAppUser(clerkUserId: string): Promise<AppUser>;
+export async function requireAppUser(): Promise<AppUser | null>;
+export async function requireAppUser(
+  clerkUserId?: string,
+): Promise<AppUser | null> {
+  const userId = clerkUserId ?? (await auth()).userId;
 
   if (!userId) {
     return null;
@@ -24,10 +33,11 @@ export async function requireAppUser() {
     return { id: existingUser.id as string, clerkId: userId };
   }
 
-  const clerkUser = await currentUser();
-  const email = clerkUser?.primaryEmailAddress?.emailAddress;
+  const clerk = await clerkClient();
+  const clerkUser = await clerk.users.getUser(userId);
+  const email = clerkUser.primaryEmailAddress?.emailAddress;
 
-  if (!clerkUser || !email) {
+  if (!email) {
     throw new Error("The authenticated Clerk user has no primary email address.");
   }
 

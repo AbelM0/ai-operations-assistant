@@ -1,11 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Waves } from "@/components/effects/waves";
-
-const benefits = [
-  "Search every invoice, receipt, and business record",
-  "Ask questions naturally in English or Amharic",
-  "Trace each answer back to the original source",
-];
+import { useTranslation } from "react-i18next";
+import { LanguageToggle } from "@/components/language-toggle";
 
 export function AuthLayout({
   children,
@@ -15,6 +13,12 @@ export function AuthLayout({
   mode: "sign-in" | "sign-up";
 }) {
   const isSignUp = mode === "sign-up";
+  const { t } = useTranslation();
+  const benefits = [
+    t("auth.benefitSearch"),
+    t("auth.benefitLanguages"),
+    t("auth.benefitSources"),
+  ];
 
   return (
     <main className="relative grid min-h-dvh overflow-hidden bg-[#050505] text-white lg:grid-cols-[1.08fr_0.92fr]">
@@ -40,7 +44,7 @@ export function AuthLayout({
         <Link
           href="/"
           className="relative z-10 flex w-fit items-center gap-3"
-          aria-label="Back to Nexus Ops home"
+          aria-label={t("auth.backHome")}
         >
           <span className="h-2.5 w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_18px_rgba(45,212,191,0.7)]" />
           <span className="text-sm font-semibold tracking-[0.18em] text-white">
@@ -51,18 +55,18 @@ export function AuthLayout({
         <div className="relative z-10 max-w-2xl py-16">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-[#5EEAD4]">
             {isSignUp
-              ? "Your operational memory starts here"
-              : "Your workspace is ready"}
+              ? t("auth.signupEyebrow")
+              : t("auth.signinEyebrow")}
           </p>
           <h1 className="mt-7 max-w-xl text-balance text-[clamp(3.4rem,5.2vw,6.2rem)] font-medium leading-[0.92] tracking-[-0.055em] text-white">
             {isSignUp
-              ? "Give every document a purpose."
-              : "Return to complete clarity."}
+              ? t("auth.signupTitle")
+              : t("auth.signinTitle")}
           </h1>
           <p className="mt-7 max-w-lg text-pretty text-base leading-7 text-[#A1A1AA]">
             {isSignUp
-              ? "Create a secure workspace where scattered business files become clear, useful decisions."
-              : "Log in to continue working with your documents, answers, and operational insights."}
+              ? t("auth.signupDescription")
+              : t("auth.signinDescription")}
           </p>
 
           <div className="mt-12 max-w-xl overflow-hidden rounded-xl border border-white/9 bg-[#0B0B0D]/90 shadow-[0_28px_80px_rgba(0,0,0,0.35)]">
@@ -70,11 +74,11 @@ export function AuthLayout({
               <div className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#2DD4BF]" />
                 <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-[#71717A]">
-                  Workspace readiness
+                  {t("auth.readiness")}
                 </span>
               </div>
               <span className="font-mono text-[9px] text-[#52525B]">
-                SECURE
+                {t("auth.secure")}
               </span>
             </div>
             <div className="grid grid-cols-[1fr_0.8fr]">
@@ -91,10 +95,10 @@ export function AuthLayout({
               <div className="flex flex-col justify-between p-5">
                 <div>
                   <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#52525B]">
-                    Document signal
+                    {t("auth.documentSignal")}
                   </p>
                   <p className="mt-2 text-2xl font-medium tracking-[-0.04em] text-white">
-                    Clear
+                    {t("auth.clear")}
                   </p>
                 </div>
                 <div
@@ -116,7 +120,7 @@ export function AuthLayout({
 
         <div className="relative z-10 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.15em] text-[#52525B]">
           <span>© {new Date().getFullYear()} Nexus Ops</span>
-          <span>English / አማርኛ</span>
+          <LanguageToggle />
         </div>
       </section>
 
@@ -125,7 +129,7 @@ export function AuthLayout({
           <Link
             href="/"
             className="flex items-center gap-2.5 lg:hidden"
-            aria-label="Back to Nexus Ops home"
+            aria-label={t("auth.backHome")}
           >
             <span className="h-2 w-2 rounded-full bg-[#2DD4BF]" />
             <span className="text-xs font-semibold tracking-[0.16em] text-white">
@@ -133,12 +137,12 @@ export function AuthLayout({
             </span>
           </Link>
           <p className="text-xs text-[#71717A]">
-            {isSignUp ? "Already have a workspace?" : "New to Nexus Ops?"}{" "}
+            {isSignUp ? t("auth.alreadyHave") : t("auth.newTo")}{" "}
             <Link
               href={isSignUp ? "/sign-in" : "/sign-up"}
               className="ml-1 font-semibold text-[#D4D4D8] underline decoration-[#2DD4BF]/50 underline-offset-4"
             >
-              {isSignUp ? "Log in" : "Create one"}
+              {isSignUp ? t("nav.login") : t("auth.createOne")}
             </Link>
           </p>
         </div>
@@ -148,9 +152,9 @@ export function AuthLayout({
         </div>
 
         <div className="flex items-center justify-center gap-5 font-mono text-[9px] uppercase tracking-[0.14em] text-[#52525B]">
-          <span>Privacy</span>
+          <span>{t("auth.privacy")}</span>
           <span className="h-1 w-1 rounded-full bg-[#27272A]" />
-          <span>Terms</span>
+          <span>{t("auth.terms")}</span>
         </div>
       </section>
     </main>
