@@ -3,8 +3,6 @@ import "server-only";
 import { streamText } from "ai";
 import { getDeepSeekModel } from "@/lib/ai/chat-model";
 
-// A 27-page text PDF is usually well below this limit. Sending it directly
-// avoids a blocking map-reduce pass before the user-visible stream begins.
 const MAX_BATCH_CHARACTERS = 280_000;
 
 type Chunk = { pageNumber: number | null; textContent: string };
@@ -63,8 +61,6 @@ export async function prepareDocumentSummary(
 
   const partialSummaries: string[] = [];
   for (let index = 0; index < batches.length; index += 1) {
-    // streamText is also used for the compression pass. Awaiting `.text`
-    // consumes the SDK stream without maintaining a second HTTP client.
     const result = streamText({
       model: summaryModel.model,
       system: summarySystemPrompt,
