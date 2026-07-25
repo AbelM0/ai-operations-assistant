@@ -14,6 +14,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+
 type ChatRequest = {
   messages?: unknown;
   conversationId?: unknown;
