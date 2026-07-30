@@ -1,12 +1,10 @@
 import {
-  createUIMessageStream,
   createUIMessageStreamResponse,
   smoothStream,
   streamText,
   toUIMessageStream,
 } from "ai";
 import { getDeepSeekModel } from "@/lib/ai/chat-model";
-import type { SummaryUIMessage } from "@/lib/ai/stream-types";
 import { isSummaryModel } from "@/lib/ai/models";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import {
@@ -46,12 +44,8 @@ export async function POST(
 
   const body = (await request.json().catch(() => ({}))) as {
     model?: string;
-    messages?: unknown;
   };
   const model = body.model?.trim() || "";
-  const messages = Array.isArray(body.messages)
-    ? (body.messages as SummaryUIMessage[])
-    : [];
   if (!isSummaryModel(model)) {
     return errorResponse("Choose a supported summary model.", 400);
   }
@@ -75,134 +69,96 @@ export async function POST(
     );
   }
 
-  const stream = createUIMessageStream<SummaryUIMessage>({
-    execute: async ({ writer }) => {
-      const writeProgress = (
-        stage: "retrieving" | "preparing" | "generating",
-        label: string,
-        detail: string,
-      ) => {
-        writer.write({
-          type: "data-progress",
-          data: { stage, label, detail },
-          transient: true,
-        });
-      };
+  const { data: chunks, error: chunksError } = await supabaseAdmin
+    .from("document_chunks")
+    .select("pageNumber, textContent")
+    .eq("documentId", documentId)
+    .order("chunkIndex", { ascending: true });
+  if (chunksError) {
+    return errorResponse(
+      "The extracted document text could not be loaded.",
+      500,
+    );
+  }
+  if (request.signal.aborted) {
+    return new Response(null, { status: 499 });
+  }
 
-      writeProgress(
-        "retrieving",
-        "Loading indexed pages",
-        "Reading the extracted document text in source order.",
-      );
-      const { data: chunks, error: chunksError } = await supabaseAdmin
-        .from("document_chunks")
-        .select("pageNumber, textContent")
-        .eq("documentId", documentId)
-        .order("chunkIndex", { ascending: true });
-      if (chunksError) {
-        throw new Error("The extracted document text could not be loaded.", {
-          cause: chunksError,
-        });
-      }
-      if (request.signal.aborted) return;
+  const prepared = await prepareDocumentSummary(
+    chunks ?? [],
+    model,
+    request.signal,
+  );
+  if (request.signal.aborted) {
+    return new Response(null, { status: 499 });
+  }
 
-      writeProgress(
-        "preparing",
-        "Preparing document context",
-        "Building a complete, ordered prompt within the model context window.",
-      );
-      const prepared = await prepareDocumentSummary(
-        chunks ?? [],
-        model,
-        request.signal,
-      );
-      if (request.signal.aborted) return;
-
-      writeProgress(
-        "generating",
-        "Writing document summary",
-        "The first grounded words will appear as the model emits them.",
-      );
-      const summaryModel = getDeepSeekModel(model);
-      let aborted = false;
-      const result = streamText({
-        model: summaryModel.model,
-        system: summarySystemPrompt,
-        prompt: prepared.prompt,
-        temperature: 0.15,
-        maxOutputTokens: summaryOutputTokenLimit(),
-        providerOptions: summaryModel.providerOptions,
-        experimental_transform: smoothStream({
-          delayInMs: 20,
-          chunking: "word",
-        }),
-        abortSignal: request.signal,
-        onAbort: () => {
-          aborted = true;
-        },
-        onEnd: async ({ text, usage }) => {
-          if (aborted || !text.trim()) return;
-
-          try {
-            const { error: insertError } = await supabaseAdmin
-              .from("document_summaries")
-              .insert({
-                documentId,
-                summary: text.trim(),
-                language: "en",
-                provider: summaryModel.provider,
-                model: summaryModel.modelId,
-              });
-            if (insertError) throw insertError;
-
-            const promptTokens =
-              prepared.priorUsage.promptTokens + (usage.inputTokens || 0);
-            const completionTokens =
-              prepared.priorUsage.completionTokens +
-              (usage.outputTokens || 0);
-            const totalTokens =
-              prepared.priorUsage.totalTokens + (usage.totalTokens || 0);
-
-            if (totalTokens > 0) {
-              const { error: usageError } = await supabaseAdmin
-                .from("ai_usage")
-                .insert({
-                  userId: appUser.id,
-                  provider: summaryModel.provider,
-                  model: summaryModel.modelId,
-                  promptTokens,
-                  completionTokens,
-                  totalTokens,
-                  estimatedCost: 0,
-                });
-              if (usageError) throw usageError;
-            }
-          } catch (persistenceError) {
-            console.error(
-              `Could not persist summary for ${documentId}`,
-              persistenceError,
-            );
-          }
-        },
-      });
-
-      writer.merge(
-        toUIMessageStream({
-          stream: result.stream,
-          originalMessages: messages,
-        }),
-      );
+  const summaryModel = getDeepSeekModel(model);
+  let aborted = false;
+  const result = streamText({
+    model: summaryModel.model,
+    system: summarySystemPrompt,
+    prompt: prepared.prompt,
+    temperature: 0.15,
+    maxOutputTokens: summaryOutputTokenLimit(),
+    providerOptions: summaryModel.providerOptions,
+    experimental_transform: smoothStream({
+      delayInMs: 20,
+      chunking: "word",
+    }),
+    abortSignal: request.signal,
+    onAbort: () => {
+      aborted = true;
     },
-    onError: (error) => {
+    onError: ({ error }) => {
       console.error(`Could not summarize document ${documentId}`, error);
-      return error instanceof Error
-        ? error.message
-        : "The summary could not be generated.";
+    },
+    onEnd: async ({ text, usage }) => {
+      if (aborted || !text.trim()) return;
+
+      try {
+        const { error: insertError } = await supabaseAdmin
+          .from("document_summaries")
+          .insert({
+            documentId,
+            summary: text.trim(),
+            language: "en",
+            provider: summaryModel.provider,
+            model: summaryModel.modelId,
+          });
+        if (insertError) throw insertError;
+
+        const promptTokens =
+          prepared.priorUsage.promptTokens + (usage.inputTokens || 0);
+        const completionTokens =
+          prepared.priorUsage.completionTokens + (usage.outputTokens || 0);
+        const totalTokens =
+          prepared.priorUsage.totalTokens + (usage.totalTokens || 0);
+
+        if (totalTokens > 0) {
+          const { error: usageError } = await supabaseAdmin
+            .from("ai_usage")
+            .insert({
+              userId: appUser.id,
+              provider: summaryModel.provider,
+              model: summaryModel.modelId,
+              promptTokens,
+              completionTokens,
+              totalTokens,
+              estimatedCost: 0,
+            });
+          if (usageError) throw usageError;
+        }
+      } catch (persistenceError) {
+        console.error(
+          `Could not persist summary for ${documentId}`,
+          persistenceError,
+        );
+      }
     },
   });
 
-  return createUIMessageStreamResponse({
-    stream,
+    return result.toUIMessageStreamResponse({
     headers: {
       "Cache-Control": "no-cache, no-transform",
       "Content-Encoding": "none",

@@ -11,6 +11,8 @@ export function StreamingMarkdown({
 }) {
   return (
     <Streamdown
+      isAnimating={streaming}
+      caret={streaming ? "circle" : undefined}
       mode={streaming ? "streaming" : "static"}
       parseIncompleteMarkdown={streaming}
       controls={false}

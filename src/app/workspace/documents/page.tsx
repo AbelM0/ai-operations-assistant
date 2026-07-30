@@ -1,10 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { DocumentsShell } from "@/components/workspace/documents-shell";
-import { requireAppUser } from "@/lib/auth/require-app-user";
-import { supabaseAdmin } from "@/lib/supabase/admin";
-import type { WorkspaceDocument } from "@/lib/documents/types";
+import { DocumentsShell } from "./_components/documents-shell";
+import { getWorkspaceDocuments } from "./actions";
 
 export const metadata: Metadata = {
   title: "Documents | NexusOps",
@@ -12,23 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DocumentsPage() {
-  const { userId } = await auth();
+  const documents = await getWorkspaceDocuments();
 
-  if (!userId) {
-    redirect("/sign-in?redirect_url=/workspace/documents");
-  }
-
-  const appUser = await requireAppUser(userId);
-
-  const { data, error } = await supabaseAdmin
-    .from("documents")
-    .select("id, originalName, mimeType, sizeBytes, status, errorMessage, createdAt")
-    .eq("userId", appUser.id)
-    .order("createdAt", { ascending: false });
-
-  if (error) {
-    throw new Error("Could not load workspace documents.", { cause: error });
-  }
-
-  return <DocumentsShell initialDocuments={(data ?? []) as WorkspaceDocument[]} />;
+  return <DocumentsShell initialDocuments={documents} />;
 }

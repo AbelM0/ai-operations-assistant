@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { WorkspaceShell } from "@/components/workspace/workspace-shell";
-import { getWorkspaceOverview } from "@/components/workspace/workspace-shell/actions";
+import { WorkspaceShell } from "./_components/workspace-shell";
+import { getWorkspaceOverview } from "./actions";
 
 export const metadata: Metadata = {
   title: "Workspace | NexusOps",

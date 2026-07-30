@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
@@ -6,7 +6,7 @@ import { requireAppUser } from "@/lib/auth/require-app-user";
 import type { WorkspaceDocument } from "@/lib/documents/types";
 import type { ConversationSummary } from "@/lib/rag/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import type { WorkspaceOverviewData } from "./types";
+import type { WorkspaceOverviewData } from "./_components/workspace-shell/types";
 
 export async function getWorkspaceOverview(): Promise<WorkspaceOverviewData> {
   const { userId } = await auth();

@@ -1,0 +1,145 @@
+"use client";
+
+import {
+  ArrowRight,
+  FilePdf,
+  FileText,
+  MagnifyingGlass,
+} from "@phosphor-icons/react";
+import Link from "next/link";
+import { useTranslation } from "react-i18next";
+import type { WorkspaceDocument } from "@/lib/documents/types";
+import { DocumentStatus } from "./document-status";
+import { formatBytes, formatDate, getFileType } from "./utils";
+
+type DocumentsTableProps = {
+  documents: WorkspaceDocument[];
+  totalCount: number;
+  query: string;
+  onQueryChange: (query: string) => void;
+};
+
+export function DocumentsTable({
+  documents,
+  totalCount,
+  query,
+  onQueryChange,
+}: DocumentsTableProps) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage === "am" ? "am-ET" : "en";
+
+  return (
+    <section
+      aria-labelledby="document-table-heading"
+      className="mt-10 overflow-hidden rounded-xl border border-white/10 bg-[#0B0B0D]"
+    >
+      <div className="flex flex-col gap-4 border-b border-white/8 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        <div>
+          <h2
+            id="document-table-heading"
+            className="text-lg font-semibold tracking-[-0.025em] text-white"
+          >
+            {t("documents.uploadedDocuments")}
+          </h2>
+          <p className="mt-1 text-sm text-[#71717A]">
+            {t("documents.documentCount", { count: totalCount })}
+          </p>
+        </div>
+        <label className="flex h-10 w-full items-center gap-2 rounded-lg border border-white/10 bg-[#08080A] px-3 text-[#71717A] focus-within:border-[#2DD4BF]/45 sm:w-72">
+          <MagnifyingGlass className="h-4 w-4 shrink-0" />
+          <span className="sr-only">{t("documents.searchPlaceholder")}</span>
+          <input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder={t("documents.searchPlaceholder")}
+            className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-[#52525B]"
+          />
+        </label>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[780px] border-collapse text-left">
+          <thead className="bg-[#0E0E11] font-mono text-[9px] uppercase tracking-[0.12em] text-[#71717A]">
+            <tr>
+              <th className="px-7 py-3 font-medium">
+                {t("documents.columnDocument")}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t("documents.columnType")}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t("documents.columnSize")}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t("documents.columnUploaded")}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t("documents.columnStatus")}
+              </th>
+              <th className="px-7 py-3 text-right font-medium">
+                {t("documents.columnActions")}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/7">
+            {documents.map((document) => (
+              <tr
+                key={document.id}
+                className="transition-colors hover:bg-white/[0.025]"
+              >
+                <td className="px-7 py-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2DD4BF]/8 text-[#5EEAD4]">
+                      {document.mimeType === "application/pdf" ? (
+                        <FilePdf className="h-4.5 w-4.5" weight="duotone" />
+                      ) : (
+                        <FileText className="h-4.5 w-4.5" weight="duotone" />
+                      )}
+                    </div>
+                    <span className="max-w-sm truncate text-sm font-medium text-[#E4E4E7]">
+                      {document.originalName}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-4 py-4 text-xs text-[#A1A1AA]">
+                  {getFileType(document, t)}
+                </td>
+                <td className="px-4 py-4 text-xs text-[#A1A1AA]">
+                  {formatBytes(document.sizeBytes)}
+                </td>
+                <td className="px-4 py-4 text-xs text-[#A1A1AA]">
+                  {formatDate(document.createdAt, locale)}
+                </td>
+                <td className="px-4 py-4">
+                  <DocumentStatus
+                    status={document.status}
+                    errorMessage={document.errorMessage}
+                  />
+                </td>
+                <td className="px-7 py-4">
+                  <div className="flex items-center justify-end gap-2">
+                    <Link
+                      href={`/workspace/documents/${document.id}`}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2DD4BF]/25 bg-[#2DD4BF]/8 px-3 text-xs font-semibold text-[#5EEAD4] transition-colors hover:border-[#2DD4BF]/45 hover:bg-[#2DD4BF]/12 hover:text-[#99F6E4]"
+                    >
+                      {t("common.open")}
+                      <ArrowRight className="h-3.5 w-3.5" weight="bold" />
+                    </Link>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {documents.length === 0 ? (
+          <div className="flex min-h-40 flex-col items-center justify-center px-6 text-center">
+            <MagnifyingGlass className="h-6 w-6 text-[#52525B]" />
+            <p className="mt-3 text-sm font-medium text-[#D4D4D8]">
+              {t("documents.noSearchResults")}
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
