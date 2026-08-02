@@ -63,7 +63,11 @@ export const chat = {
     promptAmounts: "Find any amounts, fees, or payment terms.",
     promptConflicts: "Where do these documents disagree?",
     loadingConversation: "The conversation could not be loaded.",
-    deleteConfirm: "Delete “{{title}}”? This cannot be undone.",
+    deleteDialogTitle: "Delete this conversation?",
+    deleteDialogDescription:
+      "“{{title}}” and every message in it will be permanently removed.",
+    deleting: "Deleting…",
+    deletePermanently: "Delete permanently",
     deletingConversation: "The conversation could not be deleted.",
     emptyWorkspace: "Your workspace has no documents yet.",
     noSearchResults: "No documents match that search.",

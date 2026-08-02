@@ -43,5 +43,6 @@ export const common = {
     openNavigation: "Open navigation",
     closeNavigation: "Close navigation",
     workspaceNavigation: "Workspace navigation",
+    account: "Account",
   },
 } as const;

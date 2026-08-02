@@ -16,7 +16,6 @@ export function useAskNexus({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [chatStarted, setChatStarted] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversations, setConversations] =
@@ -28,6 +27,8 @@ export function useAskNexus({
   const [deletingConversationId, setDeletingConversationId] = useState<
     string | null
   >(null);
+  const [conversationPendingDelete, setConversationPendingDelete] =
+    useState<ConversationSummary | null>(null);
   const [responseProgress, setResponseProgress] =
     useState<AIProgress | null>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -149,7 +150,6 @@ export function useAskNexus({
     setChatStarted(false);
     setHistoryError(null);
     setResponseProgress(null);
-    setMobileNavOpen(false);
     clearError();
   };
 
@@ -180,7 +180,6 @@ export function useAskNexus({
       conversationIdRef.current = payload.conversation.id;
       setChatStarted(true);
       setDraft("");
-      setMobileNavOpen(false);
     } catch (cause) {
       setHistoryError(
         cause instanceof Error ? cause.message : t("chat.loadingConversation"),
@@ -190,14 +189,22 @@ export function useAskNexus({
     }
   };
 
-  const deleteConversation = async (id: string) => {
+  const requestDeleteConversation = (id: string) => {
     const conversation = conversations.find((item) => item.id === id);
-    if (
-      !conversation ||
-      !window.confirm(t("chat.deleteConfirm", { title: conversation.title }))
-    ) {
-      return;
-    }
+    if (!conversation || deletingConversationId) return;
+
+    setConversationPendingDelete(conversation);
+  };
+
+  const cancelDeleteConversation = () => {
+    if (!deletingConversationId) setConversationPendingDelete(null);
+  };
+
+  const deleteConversation = async () => {
+    const conversation = conversationPendingDelete;
+    if (!conversation || deletingConversationId) return;
+
+    const id = conversation.id;
 
     setDeletingConversationId(id);
     setHistoryError(null);
@@ -206,6 +213,7 @@ export function useAskNexus({
       setConversations((current) =>
         current.filter((item) => item.id !== id),
       );
+      setConversationPendingDelete(null);
       if (conversationId === id) startNewChat();
     } catch (cause) {
       setHistoryError(
@@ -220,13 +228,13 @@ export function useAskNexus({
     selectedIds,
     chatStarted,
     selectorOpen,
-    mobileNavOpen,
     draft,
     conversationId,
     conversations,
     loadingConversationId,
     historyError,
     deletingConversationId,
+    conversationPendingDelete,
     responseProgress,
     messagesEndRef,
     messages,
@@ -236,7 +244,6 @@ export function useAskNexus({
     showResponseProgress,
     setChatStarted,
     setSelectorOpen,
-    setMobileNavOpen,
     setDraft,
     setHistoryError,
     clearError,
@@ -246,6 +253,8 @@ export function useAskNexus({
     submit,
     startNewChat,
     loadConversation,
+    requestDeleteConversation,
+    cancelDeleteConversation,
     deleteConversation,
   };
 }

@@ -1,9 +1,14 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
-import { SidebarSimple, X } from "@phosphor-icons/react";
+import { X } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { LanguageToggle } from "@/components/language-toggle";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import {
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { WorkspaceSidebar } from "@/components/workspace-sidebar";
 import { AskNav } from "./ask-nav";
 import { ChatWorkspace } from "./chat-workspace";
 import { DocumentSetup } from "./document-setup";
@@ -18,19 +23,20 @@ export function AskNexusShell(props: AskNexusShellProps) {
     selectedIds,
     chatStarted,
     selectorOpen,
-    mobileNavOpen,
     conversationId,
     conversations,
     loadingConversationId,
     historyError,
     deletingConversationId,
+    conversationPendingDelete,
     setChatStarted,
     setSelectorOpen,
-    setMobileNavOpen,
     setHistoryError,
     toggleDocument,
     startNewChat,
     loadConversation,
+    requestDeleteConversation,
+    cancelDeleteConversation,
     deleteConversation,
   } = controller;
   const nav = (
@@ -42,51 +48,24 @@ export function AskNexusShell(props: AskNexusShellProps) {
       deletingConversationId={deletingConversationId}
       onNewChat={startNewChat}
       onSelectConversation={loadConversation}
-      onDeleteConversation={deleteConversation}
+      onDeleteConversation={requestDeleteConversation}
     />
   );
 
   return (
-    <main className="nexus-page min-h-dvh bg-[#050505] text-white">
-      <div className="nexus-workspace-grid pointer-events-none fixed inset-0 opacity-30" />
+    <>
+      <WorkspaceSidebar>{nav}</WorkspaceSidebar>
 
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/8 bg-[#08080A]/95 px-4 py-5 backdrop-blur-xl lg:flex">
-        {nav}
-      </aside>
+      <SidebarInset className="min-h-dvh bg-[#050505]">
+        <div className="nexus-page relative flex min-h-dvh flex-col bg-[#050505] text-white">
+          <div className="nexus-workspace-grid pointer-events-none fixed inset-0 opacity-30" />
 
-      {mobileNavOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/70"
-            aria-label={t("nav.closeNavigation")}
-            onClick={() => setMobileNavOpen(false)}
-          />
-          <aside className="relative flex h-full w-[min(20rem,88vw)] flex-col border-r border-white/10 bg-[#08080A] px-4 py-5">
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen(false)}
-              className="absolute right-4 top-5 rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white"
-              aria-label={t("nav.closeNavigation")}
-            >
-              <X className="h-5 w-5" />
-            </button>
-            {nav}
-          </aside>
-        </div>
-      ) : null}
-
-      <div className="relative flex min-h-dvh flex-col lg:pl-64">
         <header className="sticky top-0 z-20 flex h-17 items-center justify-between border-b border-white/8 bg-[#050505]/88 px-4 backdrop-blur-xl sm:px-7 lg:px-10">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen(true)}
-              className="rounded-lg p-2 text-[#A1A1AA] hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-[#5EEAD4] lg:hidden"
+            <SidebarTrigger
+              className="h-9 w-9 rounded-lg text-[#A1A1AA] hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:ring-[#5EEAD4]"
               aria-label={t("nav.openNavigation")}
-            >
-              <SidebarSimple className="h-5 w-5" />
-            </button>
+            />
             <div>
               <p className="text-sm font-medium text-white">
                 {t("nav.askNexus")}
@@ -96,17 +75,7 @@ export function AskNexusShell(props: AskNexusShellProps) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <LanguageToggle />
-            <UserButton
-              appearance={{
-                elements: {
-                  userButtonBox: "h-9 w-9 rounded-lg",
-                  avatarBox: "h-9 w-9 rounded-lg",
-                },
-              }}
-            />
-          </div>
+          <LanguageToggle />
         </header>
 
         {historyError ? (
@@ -136,7 +105,8 @@ export function AskNexusShell(props: AskNexusShellProps) {
         ) : (
           <ChatWorkspace controller={controller} />
         )}
-      </div>
+        </div>
+      </SidebarInset>
 
       <SourceSelectorDialog
         open={selectorOpen}
@@ -145,6 +115,22 @@ export function AskNexusShell(props: AskNexusShellProps) {
         onOpenChange={setSelectorOpen}
         onToggle={toggleDocument}
       />
-    </main>
+
+      <DeleteConfirmationDialog
+        open={conversationPendingDelete !== null}
+        isDeleting={deletingConversationId !== null}
+        title={t("chat.deleteDialogTitle")}
+        description={t("chat.deleteDialogDescription", {
+          title: conversationPendingDelete?.title ?? "",
+        })}
+        cancelLabel={t("common.cancel")}
+        confirmLabel={t("chat.deletePermanently")}
+        deletingLabel={t("chat.deleting")}
+        onOpenChange={(open) => {
+          if (!open) cancelDeleteConversation();
+        }}
+        onConfirm={deleteConversation}
+      />
+    </>
   );
 }

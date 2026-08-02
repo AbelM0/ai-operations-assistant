@@ -43,5 +43,6 @@ export const common = {
     openNavigation: "ማውጫውን ክፈት",
     closeNavigation: "ማውጫውን ዝጋ",
     workspaceNavigation: "የስራ ቦታ ማውጫ",
+    account: "መለያ",
   },
 } as const;

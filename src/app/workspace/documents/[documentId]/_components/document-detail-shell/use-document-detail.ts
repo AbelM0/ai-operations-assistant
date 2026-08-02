@@ -19,7 +19,6 @@ export function useDocumentDetail(
   const { t } = useTranslation();
   const router = useRouter();
   const [document, setDocument] = useState(initialDocument);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -95,12 +94,10 @@ export function useDocumentDetail(
 
   return {
     document,
-    mobileNavOpen,
     isRetrying,
     deleteOpen,
     isDeleting,
     setDocument,
-    setMobileNavOpen,
     setDeleteOpen,
     retry,
     deleteDocument,
