@@ -84,7 +84,7 @@ export function DocumentDetailShell({
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-[1480px] px-4 pb-16 pt-8 sm:px-7 lg:px-10 lg:pb-20">
+        <div className="mx-auto w-full max-w-[1480px] px-4 pb-10 pt-4 sm:px-7 sm:pb-12 sm:pt-5 lg:px-10 lg:pb-14 lg:pt-6">
           <DocumentHeading
             document={detail.document}
             locale={locale}

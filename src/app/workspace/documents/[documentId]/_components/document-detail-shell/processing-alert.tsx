@@ -21,7 +21,7 @@ export function ProcessingAlert({
 
   return (
     <section
-      className={`mt-6 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between ${
+      className={`mt-4 flex flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between ${
         document.status === "FAILED"
           ? "border border-red-400/15 bg-red-400/[0.04]"
           : "border border-amber-300/15 bg-amber-300/[0.04]"
@@ -29,7 +29,7 @@ export function ProcessingAlert({
     >
       <div>
         <p
-          className={`text-sm font-semibold ${
+          className={`text-xs font-semibold sm:text-sm ${
             document.status === "FAILED"
               ? "text-red-200"
               : "text-amber-100"
@@ -39,7 +39,7 @@ export function ProcessingAlert({
             ? t("detail.processingFailed")
             : t("detail.processingNotStarted")}
         </p>
-        <p className="mt-1 text-sm text-[#A1A1AA]">
+        <p className="mt-1 text-xs leading-5 text-[#A1A1AA] sm:text-sm">
           {document.status === "FAILED"
             ? document.errorMessage ||
               t("detail.documentProcessFailedBody")
@@ -50,7 +50,7 @@ export function ProcessingAlert({
         type="button"
         disabled={isRetrying}
         onClick={onRetry}
-        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[#09090B] disabled:opacity-60"
+        className="inline-flex h-9 w-fit items-center gap-2 rounded-lg bg-white px-3 text-xs font-semibold text-[#09090B] disabled:opacity-60"
       >
         {isRetrying ? (
           <SpinnerGap className="h-4 w-4 animate-spin" />

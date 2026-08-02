@@ -82,19 +82,19 @@ export function DocumentTabs({
   });
 
   return (
-    <Tabs defaultValue="preview" className="mt-7 gap-5">
+    <Tabs defaultValue="preview" className="mt-4 gap-3">
       <div className="flex items-center justify-between border-b border-white/8">
-        <TabsList variant="line" className="h-11 gap-5 p-0">
+        <TabsList variant="line" className="h-10 gap-4 p-0">
           <TabsTrigger
             value="preview"
-            className="h-11 gap-2 rounded-none px-1 text-[#71717A] data-active:text-white group-data-[variant=line]/tabs-list:data-active:after:bg-[#2DD4BF]"
+            className="h-10 gap-1.5 rounded-none px-1 text-sm text-[#71717A] data-active:text-white group-data-[variant=line]/tabs-list:data-active:after:bg-[#2DD4BF]"
           >
             <FilePdf className="h-4 w-4" />
             {t("detail.preview")}
           </TabsTrigger>
           <TabsTrigger
             value="summary"
-            className="h-11 gap-2 rounded-none px-1 text-[#71717A] data-active:text-white group-data-[variant=line]/tabs-list:data-active:after:bg-[#2DD4BF]"
+            className="h-10 gap-1.5 rounded-none px-1 text-sm text-[#71717A] data-active:text-white group-data-[variant=line]/tabs-list:data-active:after:bg-[#2DD4BF]"
           >
             <Sparkle className="h-4 w-4" />
             {t("detail.summary")}

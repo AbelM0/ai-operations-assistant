@@ -24,18 +24,18 @@ export function DocumentHeading({
   const { t } = useTranslation();
 
   return (
-    <section className="flex flex-col gap-6 border-b border-white/8 pb-8 xl:flex-row xl:items-end xl:justify-between">
+    <section className="flex flex-col gap-4 border-b border-white/8 pb-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="min-w-0 max-w-3xl">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5EEAD4]">
             {t("detail.record")}
           </span>
           <Status status={document.status} />
         </div>
-        <h1 className="mt-4 break-words text-[clamp(2rem,4vw,3.8rem)] font-medium leading-[1.02] tracking-[-0.045em] text-white">
+        <h1 className="mt-2 break-words text-[clamp(1.75rem,3vw,2.75rem)] font-medium leading-[1.04] tracking-[-0.045em] text-white">
           {document.originalName}
         </h1>
-        <p className="mt-4 text-sm text-[#71717A]">
+        <p className="mt-2 text-xs text-[#71717A] sm:text-sm">
           {formatBytes(document.sizeBytes)}
           <span className="mx-2 text-[#3F3F46]">/</span>
           {t("detail.uploaded")} {formatDate(document.createdAt, locale)}
@@ -47,19 +47,19 @@ export function DocumentHeading({
           ) : null}
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         <a
           href={`/api/documents/${document.id}/file`}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 px-4 text-sm font-medium text-[#D4D4D8] hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white"
         >
           <ArrowSquareOut className="h-4 w-4" />
           {t("detail.viewOriginal")}
         </a>
         <a
           href={`/api/documents/${document.id}/file?download=1`}
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 px-4 text-sm font-medium text-[#D4D4D8] hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white"
         >
           <DownloadSimple className="h-4 w-4" />
           {t("common.download")}
@@ -67,7 +67,7 @@ export function DocumentHeading({
         <button
           type="button"
           onClick={onDelete}
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-400/15 px-4 text-sm font-medium text-red-300 hover:bg-red-400/8"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-400/15 px-3 text-xs font-medium text-red-300 hover:bg-red-400/8"
         >
           <Trash className="h-4 w-4" />
           {t("common.delete")}
