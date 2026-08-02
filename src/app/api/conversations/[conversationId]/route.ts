@@ -5,6 +5,7 @@ import type {
   RagUIMessage,
 } from "@/lib/rag/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { buildEvidenceExcerpt } from "@/lib/rag/evidence";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,7 @@ type StoredChunk = {
   documentId: string;
   chunkIndex: number;
   pageNumber: number | null;
+  textContent: string;
 };
 
 type StoredDocument = {
@@ -97,6 +99,8 @@ function buildSources(
         group.similarities.length > 0 ? Math.max(...group.similarities) : 0;
       const document = documentsById.get(documentId);
 
+      if (!document) return null;
+
       return {
         id: group.sourceId ?? "",
         chunkIds: chunks.map((chunk) => chunk.id),
@@ -108,9 +112,13 @@ function buildSources(
         chunkEnd: chunks.at(-1)?.chunkIndex ?? 0,
         similarity,
         score: similarity,
+        excerpt: buildEvidenceExcerpt(
+          chunks.map((chunk) => chunk.textContent),
+        ),
         sourceOrder: group.sourceOrder,
       } satisfies RagSource & { sourceOrder: number | null };
     })
+    .filter((source): source is NonNullable<typeof source> => source !== null)
     .sort(
       (a, b) =>
         (a.sourceOrder ?? Number.MAX_SAFE_INTEGER) -
@@ -129,6 +137,7 @@ function buildSources(
         chunkEnd: source.chunkEnd,
         similarity: source.similarity,
         score: source.score,
+        excerpt: source.excerpt,
       }),
     );
 }
@@ -206,7 +215,7 @@ export async function GET(
   if (chunkIds.length > 0) {
     const { data, error } = await supabaseAdmin
       .from("document_chunks")
-      .select("id, documentId, chunkIndex, pageNumber")
+      .select("id, documentId, chunkIndex, pageNumber, textContent")
       .in("id", chunkIds);
     if (error) {
       console.error("Could not load cited chunks", error);
@@ -261,6 +270,7 @@ export async function GET(
                   conversationId: detail.id,
                   title: detail.title,
                   createdAt: detail.createdAt,
+                  messageId: message.id,
                   sources,
                 },
               },

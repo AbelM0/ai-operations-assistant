@@ -24,6 +24,7 @@ export type RagSource = {
   chunkEnd: number;
   similarity: number;
   score: number;
+  excerpt: string | null;
 };
 
 export type BuiltContext = {
@@ -43,6 +44,7 @@ export type RagDataParts = {
     conversationId: string;
     title: string;
     createdAt: string;
+    messageId?: string;
     sources: RagSource[];
   };
 };

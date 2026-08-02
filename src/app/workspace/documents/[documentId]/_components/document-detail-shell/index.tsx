@@ -17,6 +17,7 @@ export function DocumentDetailShell({
   initialDocument,
   models,
   defaultModel,
+  citedPage,
 }: DocumentDetailShellProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage === "am" ? "am-ET" : "en";
@@ -99,6 +100,7 @@ export function DocumentDetailShell({
             models={models}
             locale={locale}
             defaultModel={defaultModel}
+            citedPage={citedPage}
             onDocumentChange={detail.setDocument}
           />
         </div>

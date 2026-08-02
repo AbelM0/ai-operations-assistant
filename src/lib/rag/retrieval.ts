@@ -2,6 +2,7 @@ import "server-only";
 
 import { getEmbeddingProvider } from "@/lib/ai/embeddings";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { buildEvidenceExcerpt } from "./evidence";
 import type { BuiltContext, RagSource, RetrievedChunk } from "./types";
 
 type MatchDocumentsRow = {
@@ -211,6 +212,7 @@ export function buildContext(chunks: RetrievedChunk[]): BuiltContext {
       chunkEnd: last.chunkIndex,
       similarity: group.similarity,
       score: group.score,
+      excerpt: buildEvidenceExcerpt([group.text]),
     };
     sources.push(source);
 

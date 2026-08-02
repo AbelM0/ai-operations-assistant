@@ -6,8 +6,10 @@ import type { WorkspaceDocumentDetail } from "@/lib/documents/types";
 
 export function DocumentPreview({
   document,
+  citedPage,
 }: {
   document: WorkspaceDocumentDetail;
+  citedPage: number | null;
 }) {
   const { t } = useTranslation();
 
@@ -34,7 +36,7 @@ export function DocumentPreview({
         />
       </div>
       <iframe
-        src={`/api/documents/${document.id}/file`}
+        src={`/api/documents/${document.id}/file${citedPage ? `#page=${citedPage}` : ""}`}
         title={t("detail.previewAria", { name: document.originalName })}
         className="h-[72dvh] min-h-[34rem] w-full bg-[#17171A]"
       />

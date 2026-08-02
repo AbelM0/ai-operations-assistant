@@ -8,8 +8,18 @@ export const metadata: Metadata = {
   description: "Review, summarize, and export an uploaded document.",
 };
 
-export default async function DocumentPage({ params }: PageProps<"/workspace/documents/[documentId]">) {
+export default async function DocumentPage({
+  params,
+  searchParams,
+}: PageProps<"/workspace/documents/[documentId]">) {
   const { documentId } = await params;
+  const { page } = await searchParams;
+  const parsedPage = Number.parseInt(
+    Array.isArray(page) ? page[0] ?? "" : page ?? "",
+    10,
+  );
+  const citedPage =
+    Number.isSafeInteger(parsedPage) && parsedPage > 0 ? parsedPage : null;
   const document = await getDocumentDetail(documentId);
 
   return (
@@ -17,6 +27,7 @@ export default async function DocumentPage({ params }: PageProps<"/workspace/doc
       initialDocument={document}
       models={summaryModels}
       defaultModel={defaultSummaryModel}
+      citedPage={citedPage}
     />
   );
 }

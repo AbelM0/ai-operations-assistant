@@ -1,9 +1,14 @@
 "use client";
 
 import { Sparkle } from "@phosphor-icons/react";
-import Link from "next/link";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StreamingMarkdown } from "@/components/ai/streaming-markdown";
+import type { RagSource } from "@/lib/rag/types";
+import {
+  EvidenceDrawer,
+  type ActiveEvidence,
+} from "./evidence-drawer";
 import type { AskNexusController } from "./use-ask-nexus";
 
 const prompts = [
@@ -19,14 +24,36 @@ export function ChatMessages({
   controller: AskNexusController;
 }) {
   const { t } = useTranslation();
+  const [activeEvidence, setActiveEvidence] =
+    useState<ActiveEvidence | null>(null);
   const {
     messages,
     status,
     responseProgress,
     showResponseProgress,
-    messagesEndRef,
     sendQuestion,
   } = controller;
+
+  const pageLabel = (source: RagSource) =>
+    source.pageStart
+      ? source.pageEnd && source.pageEnd !== source.pageStart
+        ? `${source.pageStart}–${source.pageEnd}`
+        : String(source.pageStart)
+      : null;
+
+  const citationLabel = (source: RagSource) => {
+    const page = pageLabel(source);
+    return page
+      ? t("chat.evidence.citationAriaWithPage", {
+          source: source.id,
+          document: source.documentName,
+          page,
+        })
+      : t("chat.evidence.citationAria", {
+          source: source.id,
+          document: source.documentName,
+        });
+  };
 
   if (messages.length === 0) {
     return (
@@ -57,8 +84,9 @@ export function ChatMessages({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl flex-1 py-8 sm:py-10">
-      <div className="space-y-8" aria-live="polite">
+    <>
+      <div className="mx-auto w-full max-w-3xl flex-1 py-8 sm:py-10">
+        <div className="space-y-8" aria-live="polite">
         {messages.map((message) => {
           const text = message.parts
             .filter((part) => part.type === "text")
@@ -93,20 +121,45 @@ export function ChatMessages({
                     <Sparkle className="h-3.5 w-3.5" weight="fill" />
                   </span>
                   <div>
-                    <StreamingMarkdown streaming={isStreamingMessage}>
+                    <StreamingMarkdown
+                      streaming={isStreamingMessage}
+                      sources={sources}
+                      getCitationLabel={citationLabel}
+                      onCitationClick={(sourceId) =>
+                        setActiveEvidence({
+                          sourceId,
+                          sources,
+                          messageId:
+                            sourcePart?.type === "data-sources"
+                              ? sourcePart.data.messageId
+                              : undefined,
+                        })
+                      }
+                    >
                       {text}
                     </StreamingMarkdown>
-                    {sources.length ? (
+                    {sources.length && !isStreamingMessage ? (
                       <div className="mt-4 rounded-lg border border-white/8 bg-[#0B0B0D] p-3">
                         <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#5EEAD4]">
                           {t("chat.sources")}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {sources.map((source) => (
-                            <Link
+                            <button
                               key={source.id}
-                              href={`/workspace/documents/${source.documentId}`}
-                              className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.025] px-2.5 py-1.5 text-[11px] text-[#A1A1AA] transition-colors hover:border-[#2DD4BF]/30 hover:text-white"
+                              type="button"
+                              onClick={() =>
+                                setActiveEvidence({
+                                  sourceId: source.id,
+                                  sources,
+                                  messageId:
+                                    sourcePart?.type === "data-sources"
+                                      ? sourcePart.data.messageId
+                                      : undefined,
+                                })
+                              }
+                              aria-label={citationLabel(source)}
+                              className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.025] px-2.5 py-1.5 text-[11px] text-[#A1A1AA] transition-colors hover:border-[#2DD4BF]/30 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5EEAD4] active:translate-y-px"
                             >
                               <span className="font-mono text-[#5EEAD4]">
                                 [{source.id}]
@@ -119,11 +172,11 @@ export function ChatMessages({
                                   {t("common.page")} {source.pageStart}
                                   {source.pageEnd &&
                                   source.pageEnd !== source.pageStart
-                                    ? `-${source.pageEnd}`
+                                    ? `–${source.pageEnd}`
                                     : ""}
                                 </span>
                               ) : null}
-                            </Link>
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -159,8 +212,12 @@ export function ChatMessages({
             </div>
           </div>
         ) : null}
-        <div ref={messagesEndRef} />
+        </div>
       </div>
-    </div>
+      <EvidenceDrawer
+        evidence={activeEvidence}
+        onEvidenceChange={setActiveEvidence}
+      />
+    </>
   );
 }

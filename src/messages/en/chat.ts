@@ -37,6 +37,27 @@ export const chat = {
       "Add or remove sources without clearing this conversation.",
     verification:
       "Answers should be verified against the cited source passages.",
+    evidence: {
+      title: "Evidence",
+      description: "Supporting evidence for source {{source}}.",
+      usedToSupport: "Used to support this answer",
+      passage: "Supporting passage",
+      page: "Page {{page}}",
+      unavailable:
+        "The supporting passage is unavailable. You can still open the source document.",
+      openInDocument: "Open in document",
+      copyPassage: "Copy passage",
+      copied: "Copied",
+      copySuccess: "Passage copied to the clipboard.",
+      copyError: "The passage could not be copied.",
+      previous: "View previous source",
+      next: "View next source",
+      position: "{{current}} of {{total}}",
+      citationAria:
+        "View source {{source}} from {{document}}.",
+      citationAriaWithPage:
+        "View source {{source}} from {{document}}, page {{page}}.",
+    },
     promptFacts: "What are the most important facts in these documents?",
     promptDates: "Which dates and deadlines should I know about?",
     promptAmounts: "Find any amounts, fees, or payment terms.",

@@ -2,7 +2,7 @@
 
 import { FileCsv, FilePdf, FileText, X } from "@phosphor-icons/react";
 import type { ChatStatus } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StreamingMarkdown } from "@/components/ai/streaming-markdown";
 import type { SummaryUIMessage } from "@/lib/ai/stream-types";
@@ -37,20 +37,19 @@ export function SummaryViewer({
   const summaryScrollRef = useRef<HTMLDivElement | null>(null);
   const shouldFollowStreamRef = useRef(true);
   const isSummarizing = status === "submitted" || status === "streaming";
-  const latestMessage = messages.at(-1);
-  const streamedSummary = useMemo(
-    () =>
-      latestMessage?.role === "assistant"
-        ? latestMessage.parts
-            .filter(
-              (part): part is { type: "text"; text: string } =>
-                part.type === "text",
-            )
-            .map((part) => part.text)
-            .join("")
-        : "",
-    [latestMessage],
+
+  const latestAssistantMessage = messages.findLast(
+    (message) => message.role === "assistant",
   );
+  const streamedSummary =
+    latestAssistantMessage?.parts
+      .filter(
+        (part): part is { type: "text"; text: string } =>
+          part.type === "text",
+      )
+      .map((part) => part.text)
+      .join("") ?? "";
+
   const currentSummary =
     document.summaries.find(
       (summary) => summary.id === selectedSummaryId,
@@ -72,8 +71,6 @@ export function SummaryViewer({
 
     return () => window.cancelAnimationFrame(frame);
   }, [status, streamedSummary]);
-
-  console.log("[viewer]", status, messages.length, streamedSummary.length);
 
   const handleSummaryScroll = () => {
     const container = summaryScrollRef.current;

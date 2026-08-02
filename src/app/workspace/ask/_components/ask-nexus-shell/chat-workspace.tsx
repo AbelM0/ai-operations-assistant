@@ -12,7 +12,13 @@ export function ChatWorkspace({
   controller: AskNexusController;
 }) {
   const { t } = useTranslation();
-  const { selectedIds, setSelectorOpen, startNewChat } = controller;
+  const {
+    conversationId,
+    selectedIds,
+    messagesEndRef,
+    setSelectorOpen,
+    startNewChat,
+  } = controller;
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 sm:px-7 lg:px-10">
@@ -39,19 +45,23 @@ export function ChatWorkspace({
             </span>
           </span>
         </button>
-        <button
+        {/* <button
           type="button"
           onClick={startNewChat}
           className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white active:translate-y-px"
         >
           <Plus className="h-3.5 w-3.5" weight="bold" />
           {t("chat.newChat")}
-        </button>
+        </button> */}
       </div>
 
       <div className="flex flex-1 flex-col">
-        <ChatMessages controller={controller} />
+        <ChatMessages
+          key={conversationId ?? "new-conversation"}
+          controller={controller}
+        />
         <ChatComposer controller={controller} />
+        <div ref={messagesEndRef} className="h-px" aria-hidden />
       </div>
     </section>
   );

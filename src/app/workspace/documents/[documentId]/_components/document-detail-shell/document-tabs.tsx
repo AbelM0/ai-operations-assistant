@@ -25,6 +25,7 @@ type DocumentTabsProps = {
   models: SummaryModelOption[];
   locale: string;
   defaultModel: string;
+  citedPage: number | null;
   onDocumentChange: (document: WorkspaceDocumentDetail) => void;
 };
 
@@ -33,6 +34,7 @@ export function DocumentTabs({
   models,
   locale,
   defaultModel,
+  citedPage,
   onDocumentChange,
 }: DocumentTabsProps) {
   const { t } = useTranslation();
@@ -109,7 +111,7 @@ export function DocumentTabs({
       </div>
 
       <TabsContent value="preview">
-        <DocumentPreview document={document} />
+        <DocumentPreview document={document} citedPage={citedPage} />
       </TabsContent>
 
       <TabsContent value="summary">

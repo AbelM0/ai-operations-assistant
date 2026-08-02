@@ -5,6 +5,7 @@ export type DocumentDetailShellProps = {
   initialDocument: WorkspaceDocumentDetail;
   models: SummaryModelOption[];
   defaultModel: string;
+  citedPage: number | null;
 };
 
 export type RetryDocumentResponse = {
