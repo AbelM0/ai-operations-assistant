@@ -23,19 +23,20 @@ model User {
   name      String?
   avatarUrl String?
 
-  languagePreference String @default("en")
+  languagePreference String  @default("en")
   timezone           String?
-  currency           String @default("ETB")
+  currency           String  @default("ETB")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  documents       Document[]
-  conversations   Conversation[]
-  expenseEntries  ExpenseEntry[]
-  expenseSummaries ExpenseSummary[]
-  aiUsage         AIUsage[]
-  auditLogs       AuditLog[]
+  documents           Document[]
+  documentExtractions DocumentExtraction[]
+  conversations       Conversation[]
+  expenseEntries      ExpenseEntry[]
+  expenseSummaries    ExpenseSummary[]
+  aiUsage             AIUsage[]
+  auditLogs           AuditLog[]
 
   @@map("users")
 }
@@ -59,11 +60,26 @@ enum DocumentStatus {
   FAILED
 }
 
-model Document {
-  id       String @id @default(uuid()) @db.Uuid
+enum DocumentType {
+  INVOICE
+  RECEIPT
+  CONTRACT
+  OTHER
+}
 
-  userId   String @db.Uuid
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum ExtractionReviewStatus {
+  PROCESSING
+  SUGGESTED
+  NEEDS_REVIEW
+  CONFIRMED
+  FAILED
+}
+
+model Document {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   originalName String
   storagePath  String
@@ -78,7 +94,7 @@ model Document {
   parserUsed String?
   ocrEngine  String?
 
-  fileHash String? @unique
+  fileHash String?  @unique
   tags     String[] @default([])
 
   errorMessage String?
@@ -90,16 +106,52 @@ model Document {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  chunks         DocumentChunk[]
-  summaries      DocumentSummary[]
-  conversations  Conversation[]
+  chunks                DocumentChunk[]
+  summaries             DocumentSummary[]
+  extraction            DocumentExtraction?
+  conversations         Conversation[]
   conversationDocuments ConversationDocument[]
-  expenseEntries ExpenseEntry[]
-  aiJobs         AIJob[]
+  expenseEntries        ExpenseEntry[]
+  aiJobs                AIJob[]
 
   @@index([userId])
   @@index([status])
   @@map("documents")
+}
+
+// =========================================================
+// STRUCTURED DOCUMENT EXTRACTION
+// =========================================================
+
+model DocumentExtraction {
+  id String @id @default(uuid()) @db.Uuid
+
+  documentId String   @unique @db.Uuid
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  documentType             DocumentType
+  classificationConfidence Float
+  schemaVersion            String                 @default("invoice-receipt-v1")
+  fields                   Json
+  reviewStatus             ExtractionReviewStatus @default(PROCESSING)
+
+  provider     String?
+  model        String?
+  errorMessage String?
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenseEntry ExpenseEntry?
+
+  @@index([userId])
+  @@index([reviewStatus])
+  @@index([documentType])
+  @@map("document_extractions")
 }
 
 // =========================================================
@@ -178,7 +230,7 @@ model Conversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  messages Message[]
+  messages  Message[]
   documents ConversationDocument[]
 
   @@index([userId])
@@ -251,13 +303,12 @@ model MessageSource {
   chunkId String        @db.Uuid
   chunk   DocumentChunk @relation(fields: [chunkId], references: [id], onDelete: Cascade)
 
-  similarity Float?
-  sourceId   String?
+  similarity  Float?
+  sourceId    String?
   sourceOrder Int?
 
   @@index([messageId])
   @@index([chunkId])
-
   @@map("message_sources")
 }
 
@@ -302,7 +353,6 @@ model AIJob {
 
   @@index([status])
   @@index([type])
-
   @@map("ai_jobs")
 }
 
@@ -326,12 +376,11 @@ model AIUsage {
 
   totalTokens Int
 
-  estimatedCost Decimal @db.Decimal(10,5)
+  estimatedCost Decimal @db.Decimal(10, 5)
 
   createdAt DateTime @default(now())
 
   @@index([userId])
-
   @@map("ai_usage")
 }
 
@@ -359,9 +408,12 @@ model ExpenseEntry {
   documentId String?   @db.Uuid
   document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
 
+  extractionId String?             @unique @db.Uuid
+  extraction   DocumentExtraction? @relation(fields: [extractionId], references: [id], onDelete: SetNull)
+
   vendor String
 
-  amount Decimal @db.Decimal(12,2)
+  amount Decimal @db.Decimal(12, 2)
 
   currency String @default("ETB")
 
@@ -379,7 +431,6 @@ model ExpenseEntry {
 
   @@index([userId])
   @@index([date])
-
   @@map("expense_entries")
 }
 
@@ -397,7 +448,7 @@ model ExpenseSummary {
 
   periodEnd DateTime
 
-  totalAmount Decimal @db.Decimal(14,2)
+  totalAmount Decimal @db.Decimal(14, 2)
 
   vendorCount Int
 
@@ -430,6 +481,5 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([userId])
-
   @@map("audit_logs")
 }

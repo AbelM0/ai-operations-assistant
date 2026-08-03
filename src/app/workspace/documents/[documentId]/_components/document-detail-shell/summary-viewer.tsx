@@ -5,6 +5,13 @@ import type { ChatStatus } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StreamingMarkdown } from "@/components/ai/streaming-markdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { SummaryUIMessage } from "@/lib/ai/stream-types";
 import type { WorkspaceDocumentDetail } from "@/lib/documents/types";
 import { formatDate } from "./utils";
@@ -119,22 +126,37 @@ export function SummaryViewer({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {document.summaries.length > 1 ? (
-            <select
-              aria-label={t("detail.summaryVersion")}
+            <Select
               value={currentSummary?.id}
-              onChange={(event) => selectSummary(event.target.value)}
+              onValueChange={(value) => {
+                if (value) selectSummary(value);
+              }}
               disabled={isSummarizing}
-              className="h-9 max-w-48 rounded-md border border-white/10 bg-[#111113] px-2 text-xs text-[#D4D4D8] outline-none transition-colors focus:border-[#2DD4BF]/50 focus-visible:ring-2 focus-visible:ring-[#2DD4BF]/20 disabled:cursor-not-allowed disabled:text-[#52525B]"
+              items={document.summaries.map((savedSummary, index) => ({
+                value: savedSummary.id,
+                label: t("detail.version", {
+                  number: document.summaries.length - index,
+                  model: savedSummary.model,
+                }),
+              }))}
             >
-              {document.summaries.map((savedSummary, index) => (
-                <option value={savedSummary.id} key={savedSummary.id}>
-                  {t("detail.version", {
-                    number: document.summaries.length - index,
-                    model: savedSummary.model,
-                  })}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                aria-label={t("detail.summaryVersion")}
+                className="max-w-48 border-white/10 bg-[#111113] text-xs text-[#D4D4D8] data-[size=default]:h-9 focus-visible:border-[#2DD4BF]/50 focus-visible:ring-[#2DD4BF]/20 disabled:text-[#52525B]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {document.summaries.map((savedSummary, index) => (
+                  <SelectItem value={savedSummary.id} key={savedSummary.id}>
+                    {t("detail.version", {
+                      number: document.summaries.length - index,
+                      model: savedSummary.model,
+                    })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ) : null}
           {currentSummary ? (
             <>

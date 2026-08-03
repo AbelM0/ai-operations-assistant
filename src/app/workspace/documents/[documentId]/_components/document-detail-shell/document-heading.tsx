@@ -48,7 +48,7 @@ export function DocumentHeading({
         </p>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        <a
+        {/* <a
           href={`/api/documents/${document.id}/file`}
           target="_blank"
           rel="noreferrer"
@@ -56,7 +56,7 @@ export function DocumentHeading({
         >
           <ArrowSquareOut className="h-4 w-4" />
           {t("detail.viewOriginal")}
-        </a>
+        </a> */}
         <a
           href={`/api/documents/${document.id}/file?download=1`}
           className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-white"

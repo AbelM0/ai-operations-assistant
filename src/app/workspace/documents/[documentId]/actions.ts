@@ -3,6 +3,10 @@ import "server-only";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import { requireAppUser } from "@/lib/auth/require-app-user";
+import {
+  findDuplicateExpenses,
+  loadDocumentExtraction,
+} from "@/lib/documents/extraction-data";
 import type { WorkspaceDocumentDetail } from "@/lib/documents/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -33,20 +37,27 @@ export async function getDocumentDetail(
     notFound();
   }
 
-  const { data: summaries, error: summaryError } = await supabaseAdmin
-    .from("document_summaries")
-    .select("id, summary, language, provider, model, createdAt")
-    .eq("documentId", documentId)
-    .order("createdAt", { ascending: false });
+  const [summaryResult, extraction] = await Promise.all([
+    supabaseAdmin
+      .from("document_summaries")
+      .select("id, summary, language, provider, model, createdAt")
+      .eq("documentId", documentId)
+      .order("createdAt", { ascending: false }),
+    loadDocumentExtraction(documentId),
+  ]);
 
-  if (summaryError) {
+  if (summaryResult.error) {
     throw new Error("Could not load document summaries.", {
-      cause: summaryError,
+      cause: summaryResult.error,
     });
   }
 
+  const duplicateExpenses = await findDuplicateExpenses(appUser.id, extraction);
+
   return {
     ...document,
-    summaries: summaries ?? [],
+    summaries: summaryResult.data ?? [],
+    extraction,
+    duplicateExpenses,
   } as WorkspaceDocumentDetail;
 }

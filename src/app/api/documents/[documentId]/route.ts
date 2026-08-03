@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth/require-app-user";
+import {
+  findDuplicateExpenses,
+  loadDocumentExtraction,
+} from "@/lib/documents/extraction-data";
 import { processDocument } from "@/lib/documents/process-document";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -24,14 +28,28 @@ export async function GET(
   if (error) return NextResponse.json({ error: "The document could not be loaded." }, { status: 500 });
   if (!document) return NextResponse.json({ error: "Document not found." }, { status: 404 });
 
-  const { data: summaries, error: summaryError } = await supabaseAdmin
-    .from("document_summaries")
-    .select("id, summary, language, provider, model, createdAt")
-    .eq("documentId", documentId)
-    .order("createdAt", { ascending: false });
+  const [summaryResult, extraction] = await Promise.all([
+    supabaseAdmin
+      .from("document_summaries")
+      .select("id, summary, language, provider, model, createdAt")
+      .eq("documentId", documentId)
+      .order("createdAt", { ascending: false }),
+    loadDocumentExtraction(documentId),
+  ]);
 
-  if (summaryError) return NextResponse.json({ error: "Document summaries could not be loaded." }, { status: 500 });
-  return NextResponse.json({ document: { ...document, summaries: summaries ?? [] } }, { headers: { "Cache-Control": "no-store" } });
+  if (summaryResult.error) return NextResponse.json({ error: "Document summaries could not be loaded." }, { status: 500 });
+  const duplicateExpenses = await findDuplicateExpenses(appUser.id, extraction);
+  return NextResponse.json(
+    {
+      document: {
+        ...document,
+        summaries: summaryResult.data ?? [],
+        extraction,
+        duplicateExpenses,
+      },
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(

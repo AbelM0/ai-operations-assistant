@@ -1,5 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth/require-app-user";
+import { attachExtractionSummaries } from "@/lib/documents/extraction-data";
+import type { WorkspaceDocument } from "@/lib/documents/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -47,7 +49,13 @@ export async function GET() {
     return NextResponse.json({ error: "Could not load your documents." }, { status: 500 });
   }
 
-  return NextResponse.json({ documents }, { headers: { "Cache-Control": "no-store" } });
+  const enrichedDocuments = await attachExtractionSummaries(
+    (documents ?? []) as Omit<WorkspaceDocument, "extraction">[],
+  );
+  return NextResponse.json(
+    { documents: enrichedDocuments },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: Request) {

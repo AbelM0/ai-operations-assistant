@@ -1,9 +1,16 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { CaretDown, Sparkle, X } from "@phosphor-icons/react";
+import { Sparkle, X } from "@phosphor-icons/react";
 import type { ChatStatus } from "ai";
 import { useTranslation } from "react-i18next";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { SummaryModelOption } from "@/lib/ai/models";
 import type { SummaryUIMessage } from "@/lib/ai/stream-types";
 import type { WorkspaceDocumentDetail } from "@/lib/documents/types";
@@ -76,21 +83,30 @@ export function SummaryControls({
         <span className="text-xs font-medium text-[#D4D4D8]">
           {t("detail.model")}
         </span>
-        <span className="relative mt-2 block">
-          <select
+        <div className="mt-2">
+          <Select
             value={selectedModel}
-            onChange={(event) => onModelChange(event.target.value)}
+            onValueChange={(value) => {
+              if (value) onModelChange(value);
+            }}
             disabled={isSummarizing}
-            className="h-11 w-full appearance-none rounded-lg border border-white/10 bg-[#0B0B0D] px-3 pr-10 text-sm text-white outline-none transition-colors focus:border-[#2DD4BF]/50 focus-visible:ring-2 focus-visible:ring-[#2DD4BF]/25 disabled:cursor-not-allowed disabled:text-[#71717A]"
+            items={models.map((model) => ({
+              value: model.id,
+              label: model.label,
+            }))}
           >
-            {models.map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.label}
-              </option>
-            ))}
-          </select>
-          <CaretDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-[#71717A]" />
-        </span>
+            <SelectTrigger className="w-full border-white/10 bg-[#0B0B0D] text-sm text-white data-[size=default]:h-11 focus-visible:border-[#2DD4BF]/50 focus-visible:ring-[#2DD4BF]/25 disabled:text-[#71717A]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start">
+              {models.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  {model.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <span className="mt-2 block text-xs leading-5 text-[#71717A]">
           {t(
             selectedModel === "deepseek-v4-flash"

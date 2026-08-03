@@ -1,4 +1,10 @@
 import type { WorkspaceDocumentDetail } from "@/lib/documents/types";
+import type {
+  DocumentExtraction,
+  DocumentType,
+  DuplicateExpenseCandidate,
+  ExtractedField,
+} from "@/lib/documents/types";
 import type { RetryDocumentResponse } from "./types";
 
 export async function fetchDocumentDetail(
@@ -49,4 +55,54 @@ export async function removeDocument(documentId: string) {
   if (!response.ok) {
     throw new Error(payload.error || "The document could not be deleted.");
   }
+}
+
+type ExtractionResponse = {
+  extraction: DocumentExtraction;
+  duplicateExpenses: DuplicateExpenseCandidate[];
+  error?: string;
+  missingFields?: string[];
+};
+
+async function extractionRequest(
+  documentId: string,
+  init: RequestInit,
+): Promise<ExtractionResponse> {
+  const response = await fetch(`/api/documents/${documentId}/extraction`, init);
+  const payload = (await response.json().catch(() => ({}))) as ExtractionResponse;
+  if (!response.ok) {
+    const error = new Error(payload.error || "The structured details could not be updated.");
+    Object.assign(error, payload);
+    throw error;
+  }
+  return payload;
+}
+
+export function reanalyzeDocument(
+  documentId: string,
+  documentType?: DocumentType,
+) {
+  return extractionRequest(documentId, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ documentType }),
+  });
+}
+
+export function updateDocumentExtraction(
+  documentId: string,
+  action: "save" | "confirm" | "promote",
+  fields: ExtractedField[],
+  allowDuplicate = false,
+) {
+  const body =
+    action === "promote"
+      ? { action, allowDuplicate }
+      : { action, fields, allowDuplicate };
+
+  return extractionRequest(documentId, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }

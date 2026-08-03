@@ -4,6 +4,7 @@ import { getEmbeddingProvider } from "@/lib/ai/embeddings";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { chunkPages } from "./chunk-text";
 import { extractDocumentText } from "./extract-text";
+import { extractDocumentOperations } from "./extract-operations";
 
 const EMBEDDING_BATCH_SIZE = 12;
 
@@ -107,6 +108,17 @@ export async function processDocument(documentId: string) {
         );
 
       if (insertError) throw insertError;
+    }
+
+    try {
+      await extractDocumentOperations(documentId);
+    } catch (extractionError) {
+      // Structured extraction is additive. A document remains searchable even
+      // when the operations card cannot be prepared.
+      console.error(
+        `Structured extraction failed for ${documentId}`,
+        extractionError,
+      );
     }
 
     const completedAt = new Date();

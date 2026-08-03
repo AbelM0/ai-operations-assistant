@@ -4,6 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import type { WorkspaceDocument } from "@/lib/documents/types";
+import { attachExtractionSummaries } from "@/lib/documents/extraction-data";
 import type { ConversationSummary } from "@/lib/rag/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { WorkspaceOverviewData } from "./_components/workspace-shell/types";
@@ -41,9 +42,13 @@ export async function getWorkspaceOverview(): Promise<WorkspaceOverviewData> {
     });
   }
 
+  const documents = await attachExtractionSummaries(
+    (documentsResult.data ?? []) as Omit<WorkspaceDocument, "extraction">[],
+  );
+
   return {
     firstName: user?.firstName || user?.username || "there",
-    initialDocuments: (documentsResult.data ?? []) as WorkspaceDocument[],
+    initialDocuments: documents,
     initialConversations: (conversationsResult.data ??
       []) as ConversationSummary[],
     conversationCount: conversationsResult.count ?? 0,

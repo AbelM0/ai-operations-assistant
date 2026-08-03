@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import type { WorkspaceDocument } from "@/lib/documents/types";
+import { attachExtractionSummaries } from "@/lib/documents/extraction-data";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function getWorkspaceDocuments(): Promise<WorkspaceDocument[]> {
@@ -26,5 +27,7 @@ export async function getWorkspaceDocuments(): Promise<WorkspaceDocument[]> {
     throw new Error("Could not load workspace documents.", { cause: error });
   }
 
-  return (data ?? []) as WorkspaceDocument[];
+  return attachExtractionSummaries(
+    (data ?? []) as Omit<WorkspaceDocument, "extraction">[],
+  );
 }

@@ -36,6 +36,7 @@ export function DocumentPreview({
         />
       </div>
       <iframe
+        key={`${document.id}-${citedPage ?? "start"}`}
         src={`/api/documents/${document.id}/file${citedPage ? `#page=${citedPage}` : ""}`}
         title={t("detail.previewAria", { name: document.originalName })}
         className="h-[72dvh] min-h-[34rem] w-full bg-[#17171A]"

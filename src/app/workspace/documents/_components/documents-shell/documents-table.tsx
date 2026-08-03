@@ -9,8 +9,18 @@ import {
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import type { WorkspaceDocument } from "@/lib/documents/types";
-import { DocumentStatus } from "./document-status";
-import { formatBytes, formatDate, getFileType } from "./utils";
+import { DocumentStatus, ExtractionStatus } from "./document-status";
+import { formatDate, getFileType } from "./utils";
+
+function extractionValue(
+  document: WorkspaceDocument,
+  key: string,
+) {
+  const field = document.extraction?.fields.find(
+    (candidate) => candidate.key === key,
+  );
+  return field?.normalizedValue || field?.value || null;
+}
 
 type DocumentsTableProps = {
   documents: WorkspaceDocument[];
@@ -58,23 +68,29 @@ export function DocumentsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[780px] border-collapse text-left">
+        <table className="w-full min-w-[1120px] border-collapse text-left">
           <thead className="bg-[#0E0E11] font-mono text-[9px] uppercase tracking-[0.12em] text-[#71717A]">
             <tr>
               <th className="px-7 py-3 font-medium">
                 {t("documents.columnDocument")}
               </th>
               <th className="px-4 py-3 font-medium">
-                {t("documents.columnType")}
+                {t("documents.columnFileFormat")}
               </th>
               <th className="px-4 py-3 font-medium">
-                {t("documents.columnSize")}
+                {t("documents.columnDocumentType")}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t("documents.columnKeyDetail")}
               </th>
               <th className="px-4 py-3 font-medium">
                 {t("documents.columnUploaded")}
               </th>
               <th className="px-4 py-3 font-medium">
-                {t("documents.columnStatus")}
+                {t("documents.columnProcessingStatus")}
+              </th>
+              <th className="px-4 py-3 font-medium">
+                {t("documents.columnReviewStatus")}
               </th>
               <th className="px-7 py-3 text-right font-medium">
                 {t("documents.columnActions")}
@@ -105,7 +121,36 @@ export function DocumentsTable({
                   {getFileType(document, t)}
                 </td>
                 <td className="px-4 py-4 text-xs text-[#A1A1AA]">
-                  {formatBytes(document.sizeBytes)}
+                  {document.extraction
+                    ? t(
+                        `detail.operations.types.${document.extraction.documentType.toLowerCase()}`,
+                      )
+                    : t("documents.notAnalyzed")}
+                </td>
+                <td className="px-4 py-4 text-xs text-[#A1A1AA]">
+                  {document.extraction &&
+                  ["INVOICE", "RECEIPT"].includes(
+                    document.extraction.documentType,
+                  ) ? (
+                    <div className="max-w-56">
+                      <p className="truncate text-[#D4D4D8]">
+                        {extractionValue(document, "vendor") ||
+                          t("documents.detailUnavailable")}
+                      </p>
+                      <p className="mt-1 font-mono text-[10px] text-[#71717A]">
+                        {[
+                          extractionValue(document, "currency"),
+                          extractionValue(document, "total"),
+                        ]
+                          .filter(Boolean)
+                          .join(" ") || t("documents.amountUnavailable")}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="text-[#71717A]">
+                      {t("documents.detailUnavailable")}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-4 text-xs text-[#A1A1AA]">
                   {formatDate(document.createdAt, locale)}
@@ -114,6 +159,11 @@ export function DocumentsTable({
                   <DocumentStatus
                     status={document.status}
                     errorMessage={document.errorMessage}
+                  />
+                </td>
+                <td className="px-4 py-4">
+                  <ExtractionStatus
+                    status={document.extraction?.reviewStatus}
                   />
                 </td>
                 <td className="px-7 py-4">
