@@ -16,6 +16,37 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Testing
+
+Run the deterministic unit suite once:
+
+```bash
+pnpm test
+```
+
+Run unit tests in watch mode while developing:
+
+```bash
+pnpm test:watch
+```
+
+Run the public browser smoke tests in all installed browsers:
+
+```bash
+pnpm test:e2e
+```
+
+For a faster local browser check, run only Chromium:
+
+```bash
+pnpm test:e2e --project=chromium
+```
+
+Playwright starts the local Next.js development server automatically. It uses the
+application environment variables available on the machine. Keep test credentials
+and test service projects separate from production before adding authenticated
+workspace, upload, or document-processing scenarios.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
