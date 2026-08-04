@@ -24,6 +24,7 @@ export function DocumentsShell({
   const { t } = useTranslation();
   const { documents, addDocument } = useDocumentPolling(initialDocuments, t);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const filteredDocuments = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -36,7 +37,13 @@ export function DocumentsShell({
 
   const handleUploaded = (document: WorkspaceDocument) => {
     addDocument(document);
+    setPage(1);
     setUploadDialogOpen(false);
+  };
+
+  const handleQueryChange = (nextQuery: string) => {
+    setQuery(nextQuery);
+    setPage(1);
   };
 
   return (
@@ -101,7 +108,9 @@ export function DocumentsShell({
                   documents={filteredDocuments}
                   totalCount={documents.length}
                   query={query}
-                  onQueryChange={setQuery}
+                  onQueryChange={handleQueryChange}
+                  page={page}
+                  onPageChange={setPage}
                 />
               </>
             )}

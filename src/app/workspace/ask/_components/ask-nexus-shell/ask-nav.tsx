@@ -2,6 +2,7 @@
 
 import {
   ChatCenteredDots,
+  ChartDonut,
   FileText,
   House,
   Plus,
@@ -57,6 +58,18 @@ export function AskNav({
                   <House className="h-4 w-4" />
                   <span className="group-data-[collapsible=icon]:hidden">
                     {t("nav.overview")}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  render={<Link href="/workspace/expenses" />}
+                  tooltip={t("nav.expenses")}
+                  className="text-[#8B8B95] hover:bg-white/5 hover:text-white"
+                >
+                  <ChartDonut className="h-4 w-4" />
+                  <span className="group-data-[collapsible=icon]:hidden">
+                    {t("nav.expenses")}
                   </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -4,10 +4,10 @@ export const workspace = {
     setup: "የስራ ቦታ ማዋቀር · ከ4 0 ተጠናቋል",
     startWithDocument: "{{name}}፣ በአንድ ሰነድ ይጀምሩ።",
     setupDescription:
-      "NexusOps የንግድ ፋይልን ወደ ሊፈለግ የሚችል ምንጭ፣ ግልጽ ማጠቃለያ እና ወደ ገጹ መከታተል የሚችሉት መልሶች ይቀይራል።",
+      "NexusOps የንግድ ፋይልን ወደ ሊፈለግ የሚችል ማስረጃ፣ የተገመገመ የስራ ውሂብ፣ የተከታተሉ ወጪዎች እና ወደ ገጹ መከታተል የሚችሉ መልሶች ይቀይራል።",
     aboutTwoMinutes: "ለመጀመር ሁለት ደቂቃ ያህል",
     firstWorkflow: "የመጀመሪያ የስራ ሂደትዎ",
-    uploadToAnswer: "ከመጫን እስከ በማስረጃ የተደገፈ መልስ",
+    uploadToAnswer: "ከመጫን እስከ የተረጋገጠ የስራ ክንውን",
     chooseFirstSource: "ጠቃሚ የመጀመሪያ ምንጭ ይምረጡ",
     chooseFirstSourceHint:
       "አሁን መልስ ከሚፈልጉት ጥያቄ ጋር የተያያዘ ነገር ይምረጡ።",
@@ -16,7 +16,7 @@ export const workspace = {
     firstUnderway: "የመጀመሪያው የስራ ሂደትዎ ተጀምሯል።",
     greeting: "{{name}}፣ እንኳን ደህና መጡ።",
     dashboardDescription:
-      "ዝግጁ ሰነዶችዎ፣ የቅርብ ጊዜ ውይይቶችዎ እና ቀጣይ እርምጃዎችዎ እዚህ ተሰብስበዋል።",
+      "የሰነድ ማቀናበርን፣ የወጡ መስኮች ግምገማን፣ የወጪ እንቅስቃሴን እና በምንጭ የተደገፈ ስራን ከአንድ ቦታ ይከታተሉ።",
     firstSourcePreparing:
       "Nexus ሰነዱን ለቅድመ እይታ፣ ለማጠቃለያ እና በምንጭ ለተደገፉ ጥያቄዎች እያዘጋጀው ነው።",
     processingDescription:
@@ -54,24 +54,29 @@ export const workspace = {
         body: "ጽሑፍ ማውጣት፣ የገጽ መዋቅር እና ሊፈለጉ የሚችሉ ክፍሎች በራስ-ሰር ይዘጋጃሉ።",
       },
       review: {
-        title: "ሰነዱን ይገምግሙ",
-        body: "ቅድመ እይታውን ይክፈቱ እና ዋናውን ይዘት በቀጥታ የሚጻፍ ማጠቃለያ ያዘጋጁ።",
+        title: "የወጡ ዝርዝሮችን ይገምግሙ",
+        body: "መዝገቡን ከማረጋገጥዎ በፊት የሰነድ ዓይነትን፣ ቀኖችን፣ መጠኖችን እና የገጽ ማስረጃን ያረጋግጡ።",
       },
       ask: {
-        title: "በማስረጃ ይጠይቁ",
-        body: "አንድ ወይም ከዚያ በላይ ዝግጁ ሰነዶችን ይምረጡ፣ ጥያቄ ይጠይቁ እና የተጠቀሱትን ምንጮች ያረጋግጡ።",
+        title: "የተረጋገጠውን መዝገብ ይጠቀሙ",
+        body: "ወጪዎችን ያረጋግጡ፣ በቅርጸት የተዘጋጀ ማጠቃለያ ያውርዱ ወይም ከምንጭ ማስረጃ ጋር ጥያቄዎችን ይጠይቁ።",
       },
     },
     firstSource: {
       stepComplete: "ደረጃ 02 ተጠናቋል",
       stepProgress: "ደረጃ 02 በሂደት ላይ",
+      stepFailed: "ማቀናበር ትኩረት ይፈልጋል",
       readyTitle: "የመጀመሪያው ምንጭዎ ዝግጁ ነው",
+      failedTitle: "የመጀመሪያውን ምንጭዎን ማቀናበር አልተቻለም",
       preparingTitle: "Nexus የመጀመሪያውን ምንጭዎን እያዘጋጀ ነው",
       readyBody:
-        "ሰነዱን ከፍተው ይመልከቱ ወይም ማጠቃለያ ያዘጋጁ፣ ከዚያም የመጀመሪያ ዋቢ ያለው መልስዎን ለማግኘት በNexus ጥያቄ ውስጥ ይምረጡት።",
+        "ሰነዱን ከፍተው የወጡ መስኮችንና ማስረጃዎችን ይገምግሙ፣ በቅርጸት የተዘጋጀ ማጠቃለያ ያዘጋጁ ወይም የተረጋገጠ ወጪ ያስተላልፉ።",
       preparingBody:
         "{{name}} ማቀናበሩ ሲጠናቀቅ ለቅድመ እይታ፣ ለማጠቃለያ እና ለውይይት ዝግጁ ይሆናል።",
+      failedBody:
+        "የማቀናበር ስህተቱን ለመመልከት እና እንደገና መጫን እንዳለብዎ ለመወሰን የሰነዱን መዝገብ ይክፈቱ።",
       view: "ሰነዱን ይመልከቱ",
+      processing: "ሰነዱ በማቀናበር ላይ",
     },
     metrics: {
       aria: "የስራ ቦታ ማጠቃለያ",
@@ -79,11 +84,35 @@ export const workspace = {
       readyToAsk: "ለጥያቄ ዝግጁ",
       processing: "በማቀናበር ላይ",
       conversations: "ውይይቶች",
+      reviewQueue: "የግምገማ ወረፋ",
+      expenses: "ወጪዎች",
       searchableDocument: "ሊፈለግ የሚችል ሰነድ",
       searchableDocuments: "ሊፈለጉ የሚችሉ ሰነዶች",
       preparingNow: "አሁን በመዘጋጀት ላይ",
       queueClear: "ወረፋው ባዶ ነው",
       savedInAsk: "በNexus ጥያቄ ውስጥ ተቀምጧል",
+      awaitingReview: "የመስክ ግምገማ በመጠበቅ ላይ",
+      reviewClear: "የግምገማ ወረፋው ባዶ ነው",
+      trackedExpenses: "ከሰነዶች የተከታተሉ",
+    },
+    operations: {
+      eyebrow: "የስራ እንቅስቃሴ",
+      title: "ቀጣይ እርምጃዎች",
+      description: "መዝገቦችን ከማቀናበር ወደ የተረጋገጠ የስራ ውሂብ ያስተላልፉ።",
+      extractionReview: "የወጣ ውሂብ ግምገማ",
+      extractionReviewPending: "{{count}} የሰነድ መዝገቦች ማረጋገጫ ይፈልጋሉ",
+      extractionReviewClear: "ሁሉም የወጡ መዝገቦች ተገምግመዋል",
+      expenseReview: "የወጪ ትኩረት",
+      expenseReviewPending: "{{count}} የወጪ መዝገቦች ትኩረት ይፈልጋሉ",
+      expenseReviewClear: "ትኩረት የሚፈልግ የወጪ መዝገብ የለም",
+      readyToAsk: "ለጥያቄ ዝግጁ",
+      readyToAskDetail: "{{count}} የተዘጋጁ ሰነዶች መልሶችን መደገፍ ይችላሉ",
+    },
+    expenseActivity: {
+      title: "የቅርብ ጊዜ ወጪዎች",
+      description: "ከተረጋገጡ ሰነዶች የተላለፉ የቅርብ ጊዜ መዝገቦች።",
+      viewDashboard: "የወጪ ዳሽቦርድ",
+      empty: "የተረጋገጡ ወጪዎች ከተላለፉ በኋላ እዚህ ይታያሉ።",
     },
     conversations: {
       title: "Nexusን ጠይቅ",

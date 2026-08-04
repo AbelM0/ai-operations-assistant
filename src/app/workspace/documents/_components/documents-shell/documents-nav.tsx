@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatCenteredDots, FileText, House, Plus } from "@phosphor-icons/react";
+import { ChartDonut, ChatCenteredDots, FileText, House, Plus } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import {
@@ -37,6 +37,18 @@ export function DocumentsNav({
                   <House className="h-4 w-4" />
                   <span className="group-data-[collapsible=icon]:hidden">
                     {t("nav.overview")}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  render={<Link href="/workspace/expenses" />}
+                  tooltip={t("nav.expenses")}
+                  className="text-[#8B8B95] hover:bg-white/5 hover:text-white"
+                >
+                  <ChartDonut className="h-4 w-4" />
+                  <span className="group-data-[collapsible=icon]:hidden">
+                    {t("nav.expenses")}
                   </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

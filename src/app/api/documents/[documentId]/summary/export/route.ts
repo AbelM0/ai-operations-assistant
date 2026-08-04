@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import { createSummaryPdf } from "@/lib/documents/summary-pdf";
+import { summaryMarkdownToPlainText } from "@/lib/documents/summary-markdown";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -48,7 +49,7 @@ export async function GET(
   if (format === "csv") {
     const csv = [
       ["document", "generated_at", "provider", "model", "language", "summary"].map(csvCell).join(","),
-      [document.originalName, summary.createdAt, summary.provider || "", summary.model || "", summary.language, summary.summary].map(csvCell).join(","),
+      [document.originalName, summary.createdAt, summary.provider || "", summary.model || "", summary.language, summaryMarkdownToPlainText(summary.summary)].map(csvCell).join(","),
     ].join("\r\n");
     return new Response(`\uFEFF${csv}`, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${fileName}"`, "Cache-Control": "private, no-store" } });
   }

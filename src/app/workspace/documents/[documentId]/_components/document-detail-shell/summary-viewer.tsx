@@ -167,13 +167,13 @@ export function SummaryViewer({
                 <FilePdf className="h-3.5 w-3.5" />
                 PDF
               </a>
-              <a
+              {/* <a
                 href={exportHref("csv")}
                 className="inline-flex h-9 items-center gap-1.5 rounded-md border border-white/10 px-3 text-xs font-medium text-[#D4D4D8] hover:bg-white/5"
               >
                 <FileCsv className="h-3.5 w-3.5" />
                 CSV
-              </a>
+              </a> */}
             </>
           ) : null}
         </div>

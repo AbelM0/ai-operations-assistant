@@ -11,7 +11,10 @@ import type { WorkspaceDocument } from "@/lib/documents/types";
 import type { ConversationSummary } from "@/lib/rag/types";
 import { ConversationPanel } from "./conversation-panel";
 import { DocumentList } from "./document-list";
+import { ExpenseActivity } from "./expense-activity";
 import { FirstSourceGuide } from "./first-source-guide";
+import { OperationsPanel } from "./operations-panel";
+import type { WorkspaceExpense } from "./types";
 import { WorkspaceSummary } from "./workspace-summary";
 
 type ActiveWorkspaceOverviewProps = {
@@ -19,6 +22,9 @@ type ActiveWorkspaceOverviewProps = {
   documents: WorkspaceDocument[];
   conversations: ConversationSummary[];
   conversationCount: number;
+  recentExpenses: WorkspaceExpense[];
+  expenseCount: number;
+  expenseAttentionCount: number;
   showFirstUploadNextSteps: boolean;
   onUpload: () => void;
 };
@@ -28,6 +34,9 @@ export function ActiveWorkspaceOverview({
   documents,
   conversations,
   conversationCount,
+  recentExpenses,
+  expenseCount,
+  expenseAttentionCount,
   showFirstUploadNextSteps,
   onUpload,
 }: ActiveWorkspaceOverviewProps) {
@@ -90,6 +99,7 @@ export function ActiveWorkspaceOverview({
       <WorkspaceSummary
         documents={documents}
         conversationCount={conversationCount}
+        expenseCount={expenseCount}
       />
 
       {failedCount > 0 ? (
@@ -104,6 +114,14 @@ export function ActiveWorkspaceOverview({
 
       <div className="mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.65fr)]">
         <DocumentList documents={documents} />
+        <OperationsPanel
+          documents={documents}
+          expenseAttentionCount={expenseAttentionCount}
+        />
+      </div>
+
+      <div className="mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+        <ExpenseActivity expenses={recentExpenses} />
         <ConversationPanel conversations={conversations} />
       </div>
     </>

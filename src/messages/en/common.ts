@@ -33,6 +33,7 @@ export const common = {
     insideNexus: "Inside Nexus",
     overview: "Overview",
     documents: "Documents",
+    expenses: "Expenses",
     askNexus: "Ask Nexus",
     workspace: "Workspace",
     login: "Log in",

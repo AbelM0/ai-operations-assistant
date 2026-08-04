@@ -2,6 +2,8 @@
 
 import {
   ArrowRight,
+  CaretLeft,
+  CaretRight,
   FilePdf,
   FileText,
   MagnifyingGlass,
@@ -27,16 +29,32 @@ type DocumentsTableProps = {
   totalCount: number;
   query: string;
   onQueryChange: (query: string) => void;
+  page: number;
+  onPageChange: (page: number) => void;
 };
+
+const PAGE_SIZE = 10;
+
+function canOpenDocument(document: WorkspaceDocument) {
+  return document.status === "READY" || document.status === "FAILED";
+}
 
 export function DocumentsTable({
   documents,
   totalCount,
   query,
   onQueryChange,
+  page,
+  onPageChange,
 }: DocumentsTableProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage === "am" ? "am-ET" : "en";
+  const pageCount = Math.max(1, Math.ceil(documents.length / PAGE_SIZE));
+  const currentPage = Math.min(Math.max(page, 1), pageCount);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const visibleDocuments = documents.slice(pageStart, pageStart + PAGE_SIZE);
+  const rangeStart = documents.length === 0 ? 0 : pageStart + 1;
+  const rangeEnd = Math.min(pageStart + PAGE_SIZE, documents.length);
 
   return (
     <section
@@ -98,7 +116,7 @@ export function DocumentsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-white/7">
-            {documents.map((document) => (
+            {visibleDocuments.map((document) => (
               <tr
                 key={document.id}
                 className="transition-colors hover:bg-white/[0.025]"
@@ -168,13 +186,28 @@ export function DocumentsTable({
                 </td>
                 <td className="px-7 py-4">
                   <div className="flex items-center justify-end gap-2">
-                    <Link
-                      href={`/workspace/documents/${document.id}`}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2DD4BF]/25 bg-[#2DD4BF]/8 px-3 text-xs font-semibold text-[#5EEAD4] transition-colors hover:border-[#2DD4BF]/45 hover:bg-[#2DD4BF]/12 hover:text-[#99F6E4]"
-                    >
-                      {t("common.open")}
-                      <ArrowRight className="h-3.5 w-3.5" weight="bold" />
-                    </Link>
+                    {canOpenDocument(document) ? (
+                      <Link
+                        href={`/workspace/documents/${document.id}`}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2DD4BF]/25 bg-[#2DD4BF]/8 px-3 text-xs font-semibold text-[#5EEAD4] transition-colors hover:border-[#2DD4BF]/45 hover:bg-[#2DD4BF]/12 hover:text-[#99F6E4]"
+                      >
+                        {t("common.open")}
+                        <ArrowRight className="h-3.5 w-3.5" weight="bold" />
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        title={t("documents.openWhenReady")}
+                        aria-label={t("documents.openWhenReadyFor", {
+                          name: document.originalName,
+                        })}
+                        className="inline-flex h-8 cursor-not-allowed items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.025] px-3 text-xs font-semibold text-[#52525B]"
+                      >
+                        {t("common.open")}
+                        <ArrowRight className="h-3.5 w-3.5" weight="bold" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -190,6 +223,48 @@ export function DocumentsTable({
           </div>
         ) : null}
       </div>
+
+      {documents.length > 0 ? (
+        <nav
+          aria-label={t("documents.paginationLabel")}
+          className="flex flex-col gap-3 border-t border-white/8 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7"
+        >
+          <p className="font-mono text-[10px] text-[#71717A]">
+            {t("documents.paginationRange", {
+              start: rangeStart,
+              end: rangeEnd,
+              total: documents.length,
+            })}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              aria-label={t("documents.previousPage")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#A1A1AA] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-[#5EEAD4] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-white/10 disabled:hover:bg-transparent disabled:hover:text-[#A1A1AA]"
+            >
+              <CaretLeft className="h-4 w-4" weight="bold" />
+            </button>
+            <span className="min-w-24 text-center font-mono text-[10px] text-[#A1A1AA]">
+              {t("documents.pageOf", {
+                page: currentPage,
+                total: pageCount,
+              })}
+            </span>
+            <button
+              type="button"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === pageCount}
+              aria-label={t("documents.nextPage")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#A1A1AA] transition-colors hover:border-[#2DD4BF]/30 hover:bg-[#2DD4BF]/8 hover:text-[#5EEAD4] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-white/10 disabled:hover:bg-transparent disabled:hover:text-[#A1A1AA]"
+            >
+              <CaretRight className="h-4 w-4" weight="bold" />
+            </button>
+          </div>
+        </nav>
+      ) : null}
     </section>
   );
 }

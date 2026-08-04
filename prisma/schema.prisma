@@ -431,6 +431,8 @@ model ExpenseEntry {
 
   @@index([userId])
   @@index([date])
+  @@index([userId, date])
+  @@index([userId, category, date])
   @@map("expense_entries")
 }
 

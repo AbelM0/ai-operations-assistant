@@ -4,10 +4,10 @@ export const workspace = {
     setup: "Workspace setup · 0 of 4 complete",
     startWithDocument: "Start with one document, {{name}}.",
     setupDescription:
-      "NexusOps turns a business file into a searchable source, a clear summary, and answers you can trace back to the page.",
+      "NexusOps turns a business file into searchable evidence, reviewed operational data, tracked expenses, and answers you can trace to the page.",
     aboutTwoMinutes: "About two minutes to begin",
     firstWorkflow: "Your first workflow",
-    uploadToAnswer: "From upload to grounded answer",
+    uploadToAnswer: "From upload to verified operations",
     chooseFirstSource: "Choose a useful first source",
     chooseFirstSourceHint:
       "Pick something connected to a question you already need to answer.",
@@ -16,7 +16,7 @@ export const workspace = {
     firstUnderway: "Your first workflow is underway.",
     greeting: "Good to see you, {{name}}.",
     dashboardDescription:
-      "Your ready documents, recent conversations, and next actions are collected here.",
+      "Monitor document processing, extraction review, expense activity, and source-grounded work from one place.",
     firstSourcePreparing:
       "Nexus is preparing the document for preview, summaries, and source-grounded questions.",
     processingDescription:
@@ -55,26 +55,31 @@ export const workspace = {
           "OCR, page structure, and searchable chunks are prepared automatically.",
       },
       review: {
-        title: "Review the document",
+        title: "Review extracted details",
         body:
-          "Open the preview and generate a streamed summary of the important material.",
+          "Verify document type, dates, amounts, and page-level evidence before confirming the record.",
       },
       ask: {
-        title: "Ask with evidence",
+        title: "Use the verified record",
         body:
-          "Select one or more ready documents, ask a question, and verify the cited sources.",
+          "Promote expenses, export a formatted summary, or ask questions with cited source evidence.",
       },
     },
     firstSource: {
       stepComplete: "Step 02 complete",
       stepProgress: "Step 02 in progress",
+      stepFailed: "Processing needs attention",
       readyTitle: "Your first source is ready",
+      failedTitle: "Your first source could not be processed",
       preparingTitle: "Nexus is preparing your first source",
       readyBody:
-        "Open the document to preview it or generate a summary, then select it in Ask Nexus for your first cited answer.",
+        "Open the document to review extracted fields and evidence, generate a formatted summary, or promote a verified expense.",
       preparingBody:
         "{{name}} will become available for preview, summarization, and chat when processing finishes.",
+      failedBody:
+        "Open the document record to review the processing error and decide whether to upload it again.",
       view: "View document",
+      processing: "Processing document",
     },
     metrics: {
       aria: "Workspace summary",
@@ -82,11 +87,35 @@ export const workspace = {
       readyToAsk: "Ready to ask",
       processing: "Processing",
       conversations: "Conversations",
+      reviewQueue: "Review queue",
+      expenses: "Expenses",
       searchableDocument: "searchable document",
       searchableDocuments: "searchable documents",
       preparingNow: "preparing now",
       queueClear: "queue is clear",
       savedInAsk: "saved in Ask Nexus",
+      awaitingReview: "awaiting field review",
+      reviewClear: "review queue is clear",
+      trackedExpenses: "tracked from documents",
+    },
+    operations: {
+      eyebrow: "Operations pulse",
+      title: "Next actions",
+      description: "Move records from processing to verified operational data.",
+      extractionReview: "Extraction review",
+      extractionReviewPending: "{{count}} document records need verification",
+      extractionReviewClear: "All extracted records are reviewed",
+      expenseReview: "Expense attention",
+      expenseReviewPending: "{{count}} expense records need attention",
+      expenseReviewClear: "No expense records need attention",
+      readyToAsk: "Ready for questions",
+      readyToAskDetail: "{{count}} indexed documents can support answers",
+    },
+    expenseActivity: {
+      title: "Recent expenses",
+      description: "Latest records promoted from verified documents.",
+      viewDashboard: "Expense dashboard",
+      empty: "Verified expenses will appear here after promotion.",
     },
     conversations: {
       title: "Ask Nexus",

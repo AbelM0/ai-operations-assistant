@@ -41,12 +41,10 @@ export function DocumentList({
         </Link>
       </div>
       <div className="divide-y divide-white/7">
-        {documents.slice(0, 4).map((document) => (
-          <Link
-            key={document.id}
-            href={`/workspace/documents/${document.id}`}
-            className="group grid gap-4 px-5 py-4 transition-colors hover:bg-white/[0.035] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6"
-          >
+        {documents.slice(0, 4).map((document) => {
+          const canOpen = ["READY", "FAILED"].includes(document.status);
+          const content = (
+            <>
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2DD4BF]/8 text-[#5EEAD4]">
                 {document.mimeType === "application/pdf" ? (
@@ -66,8 +64,33 @@ export function DocumentList({
               </div>
             </div>
             <StatusLabel status={document.status} />
-          </Link>
-        ))}
+            </>
+          );
+          const className = `group grid gap-4 px-5 py-4 transition-colors sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6 ${
+            canOpen
+              ? "hover:bg-white/[0.035]"
+              : "cursor-wait bg-white/[0.012] opacity-70"
+          }`;
+
+          return canOpen ? (
+            <Link
+              key={document.id}
+              href={`/workspace/documents/${document.id}`}
+              className={className}
+            >
+              {content}
+            </Link>
+          ) : (
+            <div
+              key={document.id}
+              aria-disabled="true"
+              title={t("documents.openWhenReady")}
+              className={className}
+            >
+              {content}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

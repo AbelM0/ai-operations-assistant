@@ -33,6 +33,7 @@ export const common = {
     insideNexus: "Nexus ውስጥ",
     overview: "አጠቃላይ እይታ",
     documents: "ሰነዶች",
+    expenses: "ወጪዎች",
     askNexus: "Nexusን ጠይቅ",
     workspace: "የስራ ቦታ",
     login: "ግባ",

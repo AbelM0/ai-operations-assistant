@@ -7,19 +7,22 @@ import { formatBytes } from "./utils";
 type WorkspaceSummaryProps = {
   documents: WorkspaceDocument[];
   conversationCount: number;
+  expenseCount: number;
 };
 
 export function WorkspaceSummary({
   documents,
   conversationCount,
+  expenseCount,
 }: WorkspaceSummaryProps) {
   const { t } = useTranslation();
   const readyCount = documents.filter(
     (document) => document.status === "READY",
   ).length;
-  const processingCount = documents.filter(
-    (document) =>
-      document.status !== "READY" && document.status !== "FAILED",
+  const reviewCount = documents.filter((document) =>
+    ["SUGGESTED", "NEEDS_REVIEW"].includes(
+      document.extraction?.reviewStatus ?? "",
+    ),
   ).length;
   const totalBytes = documents.reduce(
     (total, document) => total + document.sizeBytes,
@@ -41,13 +44,18 @@ export function WorkspaceSummary({
       ),
     },
     {
-      label: t("workspace.metrics.processing"),
-      value: processingCount.toString(),
+      label: t("workspace.metrics.reviewQueue"),
+      value: reviewCount.toString(),
       detail: t(
-        processingCount > 0
-          ? "workspace.metrics.preparingNow"
-          : "workspace.metrics.queueClear",
+        reviewCount > 0
+          ? "workspace.metrics.awaitingReview"
+          : "workspace.metrics.reviewClear",
       ),
+    },
+    {
+      label: t("workspace.metrics.expenses"),
+      value: expenseCount.toString(),
+      detail: t("workspace.metrics.trackedExpenses"),
     },
     {
       label: t("workspace.metrics.conversations"),
@@ -59,7 +67,7 @@ export function WorkspaceSummary({
   return (
     <section
       aria-label={t("workspace.metrics.aria")}
-      className="mt-6 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/8 sm:grid-cols-2 xl:grid-cols-4"
+      className="mt-6 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/8 sm:grid-cols-2 xl:grid-cols-5"
     >
       {metrics.map(({ label, value, detail }) => (
         <div key={label} className="bg-[#0B0B0D] p-5 sm:p-6">

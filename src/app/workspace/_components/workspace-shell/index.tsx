@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { WorkspaceSidebar } from "@/components/workspace-sidebar";
 import type { WorkspaceDocument } from "@/lib/documents/types";
+import { useDocumentPolling } from "../../documents/_components/documents-shell/use-document-polling";
 import { ActiveWorkspaceOverview } from "./active-workspace-overview";
 import { NewUserOverview } from "./new-user-overview";
 import type { WorkspaceShellProps } from "./types";
@@ -16,16 +18,20 @@ export function WorkspaceShell({
   initialDocuments,
   initialConversations,
   conversationCount,
+  recentExpenses,
+  expenseCount,
+  expenseAttentionCount,
 }: WorkspaceShellProps) {
+  const { t } = useTranslation();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [documents, setDocuments] = useState(initialDocuments);
+  const { documents, addDocument } = useDocumentPolling(initialDocuments, t);
   const [showFirstUploadNextSteps, setShowFirstUploadNextSteps] =
     useState(false);
   const isNewUser = documents.length === 0;
 
   const handleUploaded = (document: WorkspaceDocument) => {
     const wasFirstUpload = documents.length === 0;
-    setDocuments((current) => [document, ...current]);
+    addDocument(document);
     setUploadDialogOpen(false);
 
     if (wasFirstUpload) {
@@ -60,6 +66,9 @@ export function WorkspaceShell({
                 documents={documents}
                 conversations={initialConversations}
                 conversationCount={conversationCount}
+                recentExpenses={recentExpenses}
+                expenseCount={expenseCount}
+                expenseAttentionCount={expenseAttentionCount}
                 showFirstUploadNextSteps={showFirstUploadNextSteps}
                 onUpload={() => setUploadDialogOpen(true)}
               />

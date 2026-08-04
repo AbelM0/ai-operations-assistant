@@ -2,6 +2,7 @@
 
 import {
   ArrowRight,
+  ChartDonut,
   ChatCenteredDots,
   FileText,
   House,
@@ -28,6 +29,12 @@ const navItems = [
     label: "nav.documents",
     icon: FileText,
     href: "/workspace/documents",
+    active: false,
+  },
+  {
+    label: "nav.expenses",
+    icon: ChartDonut,
+    href: "/workspace/expenses",
     active: false,
   },
   {
