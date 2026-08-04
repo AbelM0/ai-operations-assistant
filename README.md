@@ -47,6 +47,21 @@ application environment variables available on the machine. Keep test credential
 and test service projects separate from production before adding authenticated
 workspace, upload, or document-processing scenarios.
 
+Authenticated tests are enabled automatically when all of these variables are
+present:
+
+```bash
+E2E_CLERK_USER_EMAIL=e2e+clerk_test@example.com
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+The email must belong to a dedicated user in the same Clerk development instance.
+The test runner signs that user in through Clerk's server-side testing helper and
+stores the temporary browser state under the ignored `playwright/.clerk` directory.
+Workspace tests also use the configured Supabase environment, which should be a
+non-production test project.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

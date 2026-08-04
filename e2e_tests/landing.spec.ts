@@ -25,9 +25,20 @@ test.describe("public landing page", () => {
   });
 
   test("switches the interface to Amharic", async ({ page }) => {
-    await page.getByRole("button", { name: "አማ" }).click();
+    const amharicButton = page.getByRole("button", { name: "አማ" });
+    const documentElement = page.locator("html");
 
-    await expect(page.locator("html")).toHaveAttribute("lang", "am");
+    await expect(documentElement).toHaveAttribute("data-language", "en");
+    await expect(async () => {
+      await amharicButton.click();
+      await expect(amharicButton).toHaveAttribute("aria-pressed", "true", {
+        timeout: 1_500,
+      });
+      await expect(documentElement).toHaveAttribute("lang", "am", {
+        timeout: 1_500,
+      });
+    }).toPass({ timeout: 10_000 });
+
     await expect(
       page.getByRole("heading", {
         level: 1,
