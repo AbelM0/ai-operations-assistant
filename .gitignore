@@ -52,3 +52,6 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 /playwright/.clerk/
+
+.vercel
+.env*
