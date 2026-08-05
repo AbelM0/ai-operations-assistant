@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const isProduction = process.env.NODE_ENV === "production";
+const onnxRuntimeLinuxFiles = [
+  "./node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime.so.1",
+  "./node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6/linux/x64/onnxruntime_binding.node",
+];
 
 const nextConfig: NextConfig = {
   // Keep production builds stable on memory-constrained development machines.
@@ -20,6 +24,11 @@ const nextConfig: NextConfig = {
     "tesseract.js",
     "unpdf",
   ],
+  outputFileTracingIncludes: {
+    "/api/chat": onnxRuntimeLinuxFiles,
+    "/api/documents": onnxRuntimeLinuxFiles,
+    "/api/documents/\\[documentId\\]": onnxRuntimeLinuxFiles,
+  },
 };
 
 export default nextConfig;

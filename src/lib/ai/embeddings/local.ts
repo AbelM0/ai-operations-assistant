@@ -17,10 +17,15 @@ let extractorPromise: Promise<FeatureExtractor> | undefined;
 
 async function getExtractor() {
   extractorPromise ??= import("@huggingface/transformers").then(
-    async ({ pipeline }) =>
-      (await pipeline("feature-extraction", LOCAL_MODEL, {
+    async ({ env, pipeline }) => {
+      if (process.env.VERCEL) {
+        env.cacheDir = "/tmp/transformers-cache";
+      }
+
+      return (await pipeline("feature-extraction", LOCAL_MODEL, {
         dtype: "q8",
-      })) as FeatureExtractor,
+      })) as FeatureExtractor;
+    },
   );
 
   return extractorPromise;
@@ -57,4 +62,3 @@ export const localEmbeddingProvider: EmbeddingProvider = {
     return vectors.map(padForStorage);
   },
 };
-
