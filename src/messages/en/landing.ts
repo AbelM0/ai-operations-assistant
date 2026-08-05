@@ -1,7 +1,7 @@
 export const landing = {
   landing: {
     eyebrow: "Document intelligence for real operations",
-    heroBefore: "Find the signal.",
+    heroBefore: "Ask your documents.",
     heroAfter: "Keep the evidence close.",
     description:
       "Upload PDFs and scanned images, review streamed summaries, then ask questions across the sources you choose. Nexus keeps every answer grounded in your workspace.",
