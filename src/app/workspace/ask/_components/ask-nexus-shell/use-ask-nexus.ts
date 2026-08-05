@@ -33,6 +33,7 @@ export function useAskNexus({
     useState<AIProgress | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const autoScrollRef = useRef(true);
   const {
     messages,
     sendMessage,
@@ -104,11 +105,36 @@ export function useAskNexus({
   const showResponseProgress = isResponding && !latestAssistantHasText;
 
   useEffect(() => {
+    const bottomThreshold = 96;
+    const handleScroll = () => {
+      const distanceFromBottom =
+        document.documentElement.scrollHeight -
+        window.scrollY -
+        window.innerHeight;
+
+      if (distanceFromBottom <= bottomThreshold) {
+        autoScrollRef.current = true;
+      } else if (isResponding) {
+        autoScrollRef.current = false;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isResponding]);
+
+  useEffect(() => {
+    if (!autoScrollRef.current) return;
+
     messagesEndRef.current?.scrollIntoView({
       behavior: status === "streaming" ? "auto" : "smooth",
       block: "end",
     });
   }, [messages, status]);
+
+  const pauseAutoScroll = () => {
+    if (isResponding) autoScrollRef.current = false;
+  };
 
   const toggleDocument = (id: string) => {
     setSelectedIds((current) =>
@@ -129,6 +155,7 @@ export function useAskNexus({
       label: t("chat.progress.validating.label"),
       detail: t("chat.progress.validating.detail"),
     });
+    autoScrollRef.current = true;
     void sendMessage(
       { text: question },
       { body: { conversationId, documentIds: selectedIds } },
@@ -150,6 +177,7 @@ export function useAskNexus({
     setChatStarted(false);
     setHistoryError(null);
     setResponseProgress(null);
+    autoScrollRef.current = true;
     clearError();
   };
 
@@ -180,6 +208,7 @@ export function useAskNexus({
       conversationIdRef.current = payload.conversation.id;
       setChatStarted(true);
       setDraft("");
+      autoScrollRef.current = true;
     } catch (cause) {
       setHistoryError(
         cause instanceof Error ? cause.message : t("chat.loadingConversation"),
@@ -248,6 +277,7 @@ export function useAskNexus({
     setHistoryError,
     clearError,
     stop,
+    pauseAutoScroll,
     toggleDocument,
     sendQuestion,
     submit,

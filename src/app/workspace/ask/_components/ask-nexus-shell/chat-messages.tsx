@@ -32,6 +32,7 @@ export function ChatMessages({
     responseProgress,
     showResponseProgress,
     sendQuestion,
+    pauseAutoScroll,
   } = controller;
 
   const pageLabel = (source: RagSource) =>
@@ -85,7 +86,11 @@ export function ChatMessages({
 
   return (
     <>
-      <div className="mx-auto w-full max-w-3xl flex-1 py-8 sm:py-10">
+      <div
+        className="mx-auto w-full max-w-3xl flex-1 py-8 sm:py-10"
+        onPointerDownCapture={pauseAutoScroll}
+        onWheelCapture={pauseAutoScroll}
+      >
         <div className="space-y-8" aria-live="polite">
         {messages.map((message) => {
           const text = message.parts
