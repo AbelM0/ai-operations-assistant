@@ -9,9 +9,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageToggle } from "@/components/language-toggle";
 
 const navLinks = [
-  { href: "#features", label: "nav.capabilities" },
   { href: "#workflow", label: "nav.workflow" },
-  { href: "#product", label: "nav.insideNexus" },
 ];
 
 export function Navbar() {

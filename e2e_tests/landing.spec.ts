@@ -10,7 +10,7 @@ test.describe("public landing page", () => {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: /Find the signal\. Keep the evidence close\./,
+        name: /Ask your documents\. Keep the evidence close\./,
       }),
     ).toBeVisible();
 
@@ -22,6 +22,19 @@ test.describe("public landing page", () => {
         .getByRole("navigation", { name: "Primary navigation" })
         .getByRole("link", { name: "Log in" }),
     ).toHaveAttribute("href", "/sign-in");
+
+    const workflow = page.locator("#workflow");
+    await workflow.scrollIntoViewIfNeeded();
+    await expect(
+      workflow.getByRole("heading", { name: "One connected workflow." }),
+    ).toBeVisible();
+    await expect(workflow.getByRole("heading", { level: 3 })).toHaveCount(4);
+
+    const closingAction = page
+      .getByRole("contentinfo")
+      .getByRole("link", { name: "Create your workspace" });
+    await closingAction.scrollIntoViewIfNeeded();
+    await expect(closingAction).toHaveAttribute("href", "/sign-up");
   });
 
   test("switches the interface to Amharic", async ({ page }) => {

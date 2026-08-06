@@ -3,22 +3,20 @@
 import { MotionConfig } from "motion/react";
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
-import { FeaturesBento } from "@/components/landing/features-bento";
-import { ScrollShowcase } from "@/components/landing/scroll-showcase";
-import { ProductProof } from "@/components/landing/product-proof";
+import { ConciseOverview } from "@/components/landing/concise-overview";
 import { CtaFooter } from "@/components/landing/cta-footer";
 
 export default function Home() {
   return (
     <MotionConfig reducedMotion="user">
-      <main className="nexus-page w-full max-w-full overflow-x-hidden bg-[#050505] text-white">
+      <div className="nexus-page w-full max-w-full overflow-x-hidden bg-[#050505] text-white">
         <Navbar />
-        <Hero />
-        <FeaturesBento />
-        <ScrollShowcase />
-        <ProductProof />
+        <main>
+          <Hero />
+          <ConciseOverview />
+        </main>
         <CtaFooter />
-      </main>
+      </div>
     </MotionConfig>
   );
 }

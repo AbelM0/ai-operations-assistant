@@ -7,9 +7,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useTranslation } from "react-i18next";
 
 const footerLinks = [
-  { label: "nav.capabilities", href: "#features" },
   { label: "nav.workflow", href: "#workflow" },
-  { label: "nav.insideNexus", href: "#product" },
 ];
 
 export function CtaFooter() {
@@ -17,13 +15,13 @@ export function CtaFooter() {
   const { t } = useTranslation();
 
   return (
-    <footer className="px-5 pb-6 pt-24 sm:px-8 md:pt-36">
+    <footer className="px-5 pb-6 pt-16 sm:px-8 md:pt-24">
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.25 }}
         transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-xl border border-[#2DD4BF]/20 bg-[#2DD4BF] px-6 py-24 text-[#04100E] sm:px-12 md:py-32 lg:px-20"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-xl border border-[#2DD4BF]/20 bg-[#2DD4BF] px-6 py-16 text-[#04100E] sm:px-12 md:py-20 lg:px-20"
       >
         <motion.div
           animate={{ rotate: [0, 8, 0], scale: [1, 1.1, 1] }}
@@ -35,7 +33,7 @@ export function CtaFooter() {
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#0F766E]">
               {t("landing.footerEyebrow")}
             </p>
-            <h2 className="mt-8 max-w-4xl text-balance text-[clamp(3rem,6.2vw,6.5rem)] font-medium leading-[0.92] tracking-[-0.055em]">
+            <h2 className="mt-6 max-w-4xl text-balance text-[clamp(2.75rem,5.4vw,5.5rem)] font-medium leading-[0.94] tracking-[-0.05em]">
               {t("landing.footerTitle")}
             </h2>
           </div>

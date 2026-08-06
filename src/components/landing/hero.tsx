@@ -32,7 +32,7 @@ export function Hero() {
   const { t } = useTranslation();
 
   return (
-    <section className="relative isolate flex min-h-[980px] items-center overflow-hidden px-5 pb-28 pt-40 sm:px-8 lg:min-h-[1060px] lg:pb-40 lg:pt-48">
+    <section className="relative isolate flex min-h-[860px] items-center overflow-hidden px-5 pb-20 pt-36 sm:px-8 lg:pb-28 lg:pt-40">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[48rem] overflow-hidden opacity-75 [mask-image:linear-gradient(to_bottom,black_0%,black_44%,transparent_92%)]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(45,212,191,0.16),transparent_58%)]" />
         <Aurora
@@ -114,7 +114,7 @@ export function Hero() {
             </Link>
           </motion.div>
           <motion.a
-            href="#features"
+            href="#workflow"
             whileHover={{
               y: -4,
               borderColor: "rgba(94,234,212,0.45)",
@@ -131,7 +131,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 70, scale: 0.94 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 1.05, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mt-20 w-full max-w-6xl text-left sm:mt-24"
+          className="relative mt-16 w-full max-w-6xl text-left sm:mt-20"
         >
           <div className="absolute -inset-8 -z-10 rounded-[3rem] bg-[#2DD4BF]/7 blur-3xl" />
           <div className="overflow-hidden rounded-xl border border-white/10 bg-[#0A0A0C] shadow-[0_40px_120px_rgba(0,0,0,0.65)]">
@@ -148,7 +148,7 @@ export function Hero() {
               </div>
             </div>
 
-            <div className="grid min-h-[430px] lg:grid-cols-[0.72fr_1.28fr]">
+            <div className="grid min-h-[380px] lg:grid-cols-[0.72fr_1.28fr]">
               <div className="border-b border-white/8 p-5 sm:p-7 lg:border-b-0 lg:border-r">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-white">
