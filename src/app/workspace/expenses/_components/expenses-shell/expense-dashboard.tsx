@@ -897,6 +897,79 @@ function AttentionQueue({
   );
 }
 
+function ExpenseQualityBadge({
+  reason,
+}: {
+  reason: ReturnType<typeof attentionReason>;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <span
+      className={
+        reason
+          ? "inline-flex rounded-md border border-amber-300/15 bg-amber-300/[0.05] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-amber-200"
+          : "inline-flex rounded-md border border-[#2DD4BF]/20 bg-[#2DD4BF]/7 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[#5EEAD4]"
+      }
+    >
+      {reason
+        ? t(`expenses.attention.${reason}`)
+        : t("expenses.quality.ready")}
+    </span>
+  );
+}
+
+function ExpenseCategorySelect({
+  entry,
+  updatingExpenseId,
+  onCategoryChange,
+  fullWidth = false,
+}: {
+  entry: ExpenseDashboardEntry;
+  updatingExpenseId: string | null;
+  onCategoryChange: (id: string, category: ExpenseCategory) => void;
+  fullWidth?: boolean;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Select
+      value={entry.category}
+      disabled={updatingExpenseId === entry.id}
+      onValueChange={(value) => {
+        if (value && value !== entry.category) {
+          onCategoryChange(entry.id, value as ExpenseCategory);
+        }
+      }}
+      items={expenseCategories.map((value) => ({
+        value,
+        label: t(`expenses.categories.${value.toLowerCase()}`),
+      }))}
+    >
+      <SelectTrigger
+        aria-label={t("expenses.changeCategory", {
+          vendor: entry.vendor,
+        })}
+        size="sm"
+        className={
+          fullWidth
+            ? "h-11 w-full border-white/10 bg-[#111113] text-xs text-[#D4D4D8] xl:h-8 xl:w-36 xl:text-[10px]"
+            : "w-36 border-white/10 bg-[#111113] text-[10px] text-[#D4D4D8]"
+        }
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent align="start">
+        {expenseCategories.map((value) => (
+          <SelectItem key={value} value={value}>
+            {t(`expenses.categories.${value.toLowerCase()}`)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function ExpenseLedger({
   entries,
   currency,
@@ -913,11 +986,19 @@ function ExpenseLedger({
   onOpen: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const visibleEntries = entries.slice(0, 100);
+
   return (
-    <section className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-[#0B0B0D]">
+    <section
+      aria-labelledby="expense-ledger-heading"
+      className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-[#0B0B0D]"
+    >
       <header className="flex items-center justify-between gap-4 border-b border-white/8 px-5 py-5 sm:px-6">
         <div>
-          <h2 className="text-sm font-semibold text-white">
+          <h2
+            id="expense-ledger-heading"
+            className="text-sm font-semibold text-white"
+          >
             {t("expenses.ledger")}
           </h2>
           <p className="mt-1 text-xs text-[#71717A]">
@@ -928,94 +1009,103 @@ function ExpenseLedger({
           {currency}
         </span>
       </header>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] border-collapse text-left">
-          <thead className="bg-[#0E0E11] font-mono text-[9px] uppercase tracking-[0.12em] text-[#71717A]">
+
+      <div className="overflow-hidden xl:overflow-x-auto">
+        <table
+          aria-labelledby="expense-ledger-heading"
+          className="block w-full border-collapse text-left xl:table xl:min-w-[980px]"
+        >
+          <thead className="hidden bg-[#0E0E11] font-mono text-[9px] uppercase tracking-[0.12em] text-[#71717A] xl:table-header-group">
             <tr>
-              <th className="px-6 py-3 font-medium">{t("expenses.date")}</th>
-              <th className="px-4 py-3 font-medium">{t("expenses.vendor")}</th>
-              <th className="px-4 py-3 font-medium">{t("expenses.category")}</th>
-              <th className="px-4 py-3 font-medium">{t("expenses.qualityLabel")}</th>
-              <th className="px-4 py-3 text-right font-medium">{t("expenses.amount")}</th>
-              <th className="px-6 py-3 text-right font-medium">{t("expenses.actions")}</th>
+              <th scope="col" className="px-6 py-3 font-medium">
+                {t("expenses.date")}
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                {t("expenses.vendor")}
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                {t("expenses.category")}
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                {t("expenses.qualityLabel")}
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-medium">
+                {t("expenses.amount")}
+              </th>
+              <th scope="col" className="px-6 py-3 text-right font-medium">
+                {t("expenses.actions")}
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/7">
-            {entries.slice(0, 100).map((entry) => {
+          <tbody className="grid gap-3 bg-[#050505] p-3 xl:table-row-group xl:divide-y xl:divide-white/7 xl:bg-transparent xl:p-0">
+            {visibleEntries.map((entry) => {
               const reason = attentionReason(entry);
               return (
-                <tr key={entry.id} className="hover:bg-white/[0.025]">
-                  <td className="px-6 py-4 font-mono text-[10px] text-[#A1A1AA]">
+                <tr
+                  key={entry.id}
+                  className="grid grid-cols-1 gap-4 rounded-lg border border-white/10 bg-[#0E0E11] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-colors hover:bg-[#111113] sm:grid-cols-2 xl:table-row xl:rounded-none xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none xl:hover:bg-white/[0.025]"
+                >
+                  <td className="order-3 min-w-0 font-mono text-[10px] leading-5 text-[#A1A1AA] xl:table-cell xl:px-6 xl:py-4">
+                    <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.12em] text-[#A1A1AA] xl:hidden">
+                      {t("expenses.date")}
+                    </span>
                     {new Intl.DateTimeFormat(locale, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
                     }).format(new Date(entry.date))}
                   </td>
-                  <td className="max-w-72 px-4 py-4">
+                  <td className="order-1 min-w-0 border-b border-white/8 pb-4 xl:table-cell xl:max-w-72 xl:border-0 xl:px-4 xl:py-4">
                     <button
                       type="button"
                       onClick={() => onOpen(entry.id)}
-                      className="block max-w-full text-left"
+                      aria-label={t("expenses.inspectExpense", {
+                        vendor: entry.vendor,
+                      })}
+                      className="block min-h-11 w-full max-w-full text-left focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5EEAD4] xl:min-h-0"
                     >
-                      <span className="block truncate text-xs font-medium text-[#E4E4E7] hover:text-[#5EEAD4]">
+                      <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.12em] text-[#A1A1AA] xl:hidden">
+                        {t("expenses.vendor")}
+                      </span>
+                      <span className="block break-words text-sm font-semibold leading-5 text-[#E4E4E7] transition-colors hover:text-[#5EEAD4] xl:truncate xl:text-xs xl:font-medium">
                         {entry.vendor}
                       </span>
-                      <span className="mt-1 block truncate text-[10px] text-[#52525B]">
+                      <span className="mt-1.5 block break-words text-xs leading-5 text-[#A1A1AA] xl:mt-1 xl:truncate xl:text-[10px] xl:leading-normal xl:text-[#52525B]">
                         {entry.description || t("expenses.noDescription")}
                       </span>
                     </button>
                   </td>
-                  <td className="px-4 py-4">
-                    <Select
-                      value={entry.category}
-                      disabled={updatingExpenseId === entry.id}
-                      onValueChange={(value) => {
-                        if (value && value !== entry.category) {
-                          onCategoryChange(entry.id, value as ExpenseCategory);
-                        }
-                      }}
-                      items={expenseCategories.map((value) => ({
-                        value,
-                        label: t(`expenses.categories.${value.toLowerCase()}`),
-                      }))}
-                    >
-                      <SelectTrigger
-                        aria-label={t("expenses.changeCategory", {
-                          vendor: entry.vendor,
-                        })}
-                        size="sm"
-                        className="w-36 border-white/10 bg-[#111113] text-[10px] text-[#D4D4D8]"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent align="start">
-                        {expenseCategories.map((value) => (
-                          <SelectItem key={value} value={value}>
-                            {t(`expenses.categories.${value.toLowerCase()}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <td className="order-5 min-w-0 sm:col-span-2 xl:table-cell xl:px-4 xl:py-4">
+                    <span className="mb-2 block font-mono text-[9px] uppercase tracking-[0.12em] text-[#A1A1AA] xl:hidden">
+                      {t("expenses.category")}
+                    </span>
+                    <ExpenseCategorySelect
+                      entry={entry}
+                      updatingExpenseId={updatingExpenseId}
+                      onCategoryChange={onCategoryChange}
+                      fullWidth
+                    />
                   </td>
-                  <td className="px-4 py-4">
-                    <span
-                      className={
-                        reason
-                          ? "inline-flex rounded-md border border-amber-300/15 bg-amber-300/[0.05] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-amber-200"
-                          : "inline-flex rounded-md border border-[#2DD4BF]/20 bg-[#2DD4BF]/7 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[#5EEAD4]"
-                      }
-                    >
-                      {reason
-                        ? t(`expenses.attention.${reason}`)
-                        : t("expenses.quality.ready")}
+                  <td className="order-4 min-w-0 xl:table-cell xl:px-4 xl:py-4">
+                    <span className="mb-2 block font-mono text-[9px] uppercase tracking-[0.12em] text-[#A1A1AA] xl:hidden">
+                      {t("expenses.qualityLabel")}
+                    </span>
+                    <ExpenseQualityBadge reason={reason} />
+                  </td>
+                  <td className="order-2 min-w-0 border-b border-white/8 pb-4 font-mono text-sm font-medium text-white sm:text-right xl:table-cell xl:border-0 xl:px-4 xl:py-4 xl:text-xs">
+                    <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.12em] text-[#A1A1AA] xl:hidden">
+                      {t("expenses.amount")}
+                    </span>
+                    <span className="block break-all xl:whitespace-nowrap">
+                      {formatMoney(entry.amount, currency, locale)}
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-right font-mono text-xs font-medium text-white">
-                    {formatMoney(entry.amount, currency, locale)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
+                  <td className="order-6 border-t border-white/8 pt-4 sm:col-span-2 xl:table-cell xl:border-0 xl:px-6 xl:py-4">
+                    <div
+                      className={`grid gap-2 xl:flex xl:justify-end ${
+                        entry.documentId ? "grid-cols-2" : "grid-cols-1"
+                      }`}
+                    >
                       {entry.documentId ? (
                         <Link
                           href={`/workspace/documents/${entry.documentId}${
@@ -1023,19 +1113,29 @@ function ExpenseLedger({
                               ? `?page=${entry.evidencePage}`
                               : ""
                           }`}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-[10px] font-medium text-[#A1A1AA] hover:border-[#2DD4BF]/30 hover:text-[#5EEAD4]"
+                          aria-label={t("expenses.sourceForExpense", {
+                            vendor: entry.vendor,
+                          })}
+                          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-[#A1A1AA] transition-colors hover:border-[#2DD4BF]/30 hover:text-[#5EEAD4] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5EEAD4] xl:h-8 xl:px-2.5 xl:text-[10px]"
                         >
-                          <FileText className="h-3.5 w-3.5" />
+                          <FileText aria-hidden="true" className="h-3.5 w-3.5" />
                           {t("expenses.source")}
                         </Link>
                       ) : null}
                       <button
                         type="button"
                         onClick={() => onOpen(entry.id)}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#2DD4BF]/25 bg-[#2DD4BF]/8 px-2.5 text-[10px] font-semibold text-[#5EEAD4] hover:bg-[#2DD4BF]/13 hover:text-white"
+                        aria-label={t("expenses.inspectExpense", {
+                          vendor: entry.vendor,
+                        })}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#2DD4BF]/25 bg-[#2DD4BF]/8 px-3 text-xs font-semibold text-[#5EEAD4] transition-colors hover:bg-[#2DD4BF]/13 hover:text-white active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5EEAD4] xl:h-8 xl:px-2.5 xl:text-[10px]"
                       >
                         {t("expenses.inspect")}
-                        <ArrowRight className="h-3.5 w-3.5" weight="bold" />
+                        <ArrowRight
+                          aria-hidden="true"
+                          className="h-3.5 w-3.5"
+                          weight="bold"
+                        />
                       </button>
                     </div>
                   </td>

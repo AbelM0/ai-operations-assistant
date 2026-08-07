@@ -205,7 +205,44 @@ function LedgerLoading() {
         <PanelHeading />
         <Skeleton className={`h-3 w-24 ${pulse}`} />
       </div>
-      <div className="overflow-hidden">
+      <div className="grid gap-3 bg-[#050505] p-3 xl:hidden">
+        {Array.from({ length: 3 }).map((_, row) => (
+          <article
+            key={row}
+            className="rounded-lg border border-white/10 bg-[#0E0E11] p-4"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <Skeleton className={`h-3.5 w-32 max-w-full ${pulse}`} />
+                <Skeleton className={`mt-2 h-2.5 w-44 max-w-full ${pulse}`} />
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <Skeleton className={`h-2 w-10 ${pulse}`} />
+                <Skeleton className={`h-3.5 w-20 ${pulse}`} />
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 border-t border-white/8 pt-4">
+              <div>
+                <Skeleton className={`h-2 w-10 ${pulse}`} />
+                <Skeleton className={`mt-2 h-3 w-20 ${pulse}`} />
+              </div>
+              <div>
+                <Skeleton className={`h-2 w-12 ${pulse}`} />
+                <Skeleton className={`mt-2 h-6 w-24 rounded-md ${pulse}`} />
+              </div>
+              <div className="col-span-2">
+                <Skeleton className={`h-2 w-14 ${pulse}`} />
+                <Skeleton className={`mt-2 h-11 w-full rounded-lg ${pulse}`} />
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/8 pt-4">
+              <Skeleton className={`h-11 w-full rounded-lg ${pulse}`} />
+              <Skeleton className={`h-11 w-full rounded-lg ${pulse}`} />
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-hidden xl:block">
         <div className="grid min-w-[780px] grid-cols-[0.7fr_1.4fr_1fr_0.8fr_0.9fr_0.7fr] gap-5 border-b border-white/8 px-6 py-3">
           {[48, 56, 52, 50, 44, 46].map((width) => (
             <Skeleton key={width} className={`h-2 ${pulse}`} style={{ width: `${width}%` }} />
