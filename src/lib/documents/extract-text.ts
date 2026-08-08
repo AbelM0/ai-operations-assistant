@@ -42,7 +42,10 @@ async function createOcrWorker() {
     .map((language) => language.trim())
     .filter(Boolean);
   const cachePath =
-    process.env.TESSERACT_CACHE_PATH || path.join(process.cwd(), ".cache", "tesseract");
+    process.env.TESSERACT_CACHE_PATH ||
+    (process.env.VERCEL
+      ? path.join("/tmp", "tesseract")
+      : path.join(process.cwd(), ".cache", "tesseract"));
 
   await mkdir(cachePath, { recursive: true });
 
