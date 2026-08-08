@@ -5,6 +5,7 @@ import {
   loadDocumentExtraction,
 } from "@/lib/documents/extraction-data";
 import { processDocument } from "@/lib/documents/process-document";
+import { failStaleDocumentProcessing } from "@/lib/documents/processing-status";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -18,6 +19,7 @@ export async function GET(
   if (!appUser) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
 
   const { documentId } = await params;
+  await failStaleDocumentProcessing({ userId: appUser.id, documentId });
   const { data: document, error } = await supabaseAdmin
     .from("documents")
     .select("id, originalName, mimeType, sizeBytes, pageCount, status, errorMessage, parserUsed, processingCompletedAt, createdAt")
@@ -70,6 +72,7 @@ export async function POST(
   }
 
   const { documentId } = await params;
+  await failStaleDocumentProcessing({ userId: appUser.id, documentId });
   const { data: document, error: documentError } = await supabaseAdmin
     .from("documents")
     .select("id, originalName, status")

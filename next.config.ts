@@ -9,9 +9,13 @@ const sharpLinuxFiles = [
   "./node_modules/.pnpm/@img+sharp-linux-x64@*/node_modules/@img/sharp-linux-x64/**/*",
   "./node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/node_modules/@img/sharp-libvips-linux-x64/**/*",
 ];
-const documentProcessingLinuxFiles = [
+const pdfJsRuntimeFiles = [
+  "./node_modules/.pnpm/pdfjs-dist@*/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+];
+const documentProcessingRuntimeFiles = [
   ...onnxRuntimeLinuxFiles,
   ...sharpLinuxFiles,
+  ...pdfJsRuntimeFiles,
 ];
 
 const nextConfig: NextConfig = {
@@ -34,8 +38,8 @@ const nextConfig: NextConfig = {
   ],
   outputFileTracingIncludes: {
     "/api/chat": onnxRuntimeLinuxFiles,
-    "/api/documents": documentProcessingLinuxFiles,
-    "/api/documents/\\[documentId\\]": documentProcessingLinuxFiles,
+    "/api/documents": documentProcessingRuntimeFiles,
+    "/api/documents/\\[documentId\\]": documentProcessingRuntimeFiles,
   },
 };
 

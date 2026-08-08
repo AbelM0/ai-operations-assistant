@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import { attachExtractionSummaries } from "@/lib/documents/extraction-data";
+import { failStaleDocumentProcessing } from "@/lib/documents/processing-status";
 import type { WorkspaceDocument } from "@/lib/documents/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -37,6 +38,8 @@ export async function GET() {
   if (!appUser) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   }
+
+  await failStaleDocumentProcessing({ userId: appUser.id });
 
   const { data: documents, error } = await supabaseAdmin
     .from("documents")
