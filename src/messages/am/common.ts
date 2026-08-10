@@ -46,4 +46,9 @@ export const common = {
     workspaceNavigation: "የስራ ቦታ ማውጫ",
     account: "መለያ",
   },
+  notFound: {
+    title: "ገጹ አልተገኘም",
+    description: "የሚፈልጉት ገጽ የለም ወይም ወደ ሌላ ቦታ ተዛውሯል።",
+    home: "ወደ መነሻ ተመለስ",
+  },
 } as const;

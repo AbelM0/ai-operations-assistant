@@ -46,4 +46,9 @@ export const common = {
     workspaceNavigation: "Workspace navigation",
     account: "Account",
   },
+  notFound: {
+    title: "Page not found",
+    description: "This page does not exist or may have moved.",
+    home: "Go home",
+  },
 } as const;
