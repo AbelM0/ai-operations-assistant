@@ -16,6 +16,10 @@ const pdfJsRuntimeFiles = [
 // dynamically, so Next.js cannot discover them through static output tracing.
 const tesseractRuntimeFiles = [
   "./node_modules/.pnpm/tesseract.js@*/node_modules/tesseract.js/**/*",
+  // The worker imports bmp-js from Tesseract's pnpm virtual node_modules.
+  // Include both that resolution path and the physical package target.
+  "./node_modules/.pnpm/tesseract.js@*/node_modules/bmp-js/**/*",
+  "./node_modules/.pnpm/bmp-js@*/node_modules/bmp-js/**/*",
   "./node_modules/.pnpm/tesseract.js-core@*/node_modules/tesseract.js-core/**/*",
   "./node_modules/.pnpm/wasm-feature-detect@*/node_modules/wasm-feature-detect/**/*",
 ];
