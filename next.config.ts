@@ -12,10 +12,18 @@ const sharpLinuxFiles = [
 const pdfJsRuntimeFiles = [
   "./node_modules/.pnpm/pdfjs-dist@*/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
 ];
+// Tesseract's Node worker loads its parent worker module and OCR core variants
+// dynamically, so Next.js cannot discover them through static output tracing.
+const tesseractRuntimeFiles = [
+  "./node_modules/.pnpm/tesseract.js@*/node_modules/tesseract.js/**/*",
+  "./node_modules/.pnpm/tesseract.js-core@*/node_modules/tesseract.js-core/**/*",
+  "./node_modules/.pnpm/wasm-feature-detect@*/node_modules/wasm-feature-detect/**/*",
+];
 const documentProcessingRuntimeFiles = [
   ...onnxRuntimeLinuxFiles,
   ...sharpLinuxFiles,
   ...pdfJsRuntimeFiles,
+  ...tesseractRuntimeFiles,
 ];
 
 const nextConfig: NextConfig = {
