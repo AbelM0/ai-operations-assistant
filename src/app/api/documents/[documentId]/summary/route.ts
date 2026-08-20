@@ -1,10 +1,10 @@
 import {
   createUIMessageStreamResponse,
   smoothStream,
-  streamText,
   toUIMessageStream,
 } from "ai";
 import { getDeepSeekModel } from "@/lib/ai/chat-model";
+import { streamText, withLangSmithTracing } from "@/lib/ai/sdk";
 import { isSummaryModel } from "@/lib/ai/models";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import {
@@ -95,13 +95,16 @@ export async function POST(
 
   const summaryModel = getDeepSeekModel(model);
   let aborted = false;
-  const result = streamText({
+  const result = await streamText({
     model: summaryModel.model,
     system: summarySystemPrompt,
     prompt: prepared.prompt,
     temperature: 0.15,
     maxOutputTokens: summaryOutputTokenLimit(),
-    providerOptions: summaryModel.providerOptions,
+    providerOptions: withLangSmithTracing(
+      summaryModel.providerOptions,
+      "document-summary",
+    ),
     experimental_transform: smoothStream({
       delayInMs: 20,
       chunking: "word",

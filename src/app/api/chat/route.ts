@@ -2,10 +2,10 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   smoothStream,
-  streamText,
   toUIMessageStream,
 } from "ai";
 import { getChatModel } from "@/lib/ai/chat-model";
+import { streamText, withLangSmithTracing } from "@/lib/ai/sdk";
 import { requireAppUser } from "@/lib/auth/require-app-user";
 import { buildContext, retrieveDocumentChunks } from "@/lib/rag/retrieval";
 import type { RagSource, RagUIMessage } from "@/lib/rag/types";
@@ -326,14 +326,17 @@ async function persistAssistantMessage({
     if (isFirstTurn) {
       try {
         const titleModel = getChatModel();
-        const titleResult = streamText({
+        const titleResult = await streamText({
           model: titleModel.model,
           system:
             "You create short, specific conversation titles for a document assistant. Summarize the user's request and the assistant's answer together so the title is useful in a history sidebar. Return only the title, with no quotes, prefix, or trailing punctuation.",
           prompt: `User request:\n${question}\n\nAssistant answer:\n${answer.trim()}`,
           temperature: 0.2,
           maxOutputTokens: 40,
-          providerOptions: titleModel.providerOptions,
+          providerOptions: withLangSmithTracing(
+            titleModel.providerOptions,
+            "conversation-title",
+          ),
         });
         const title = (await titleResult.text)
           .replace(/^['"`]+|['"`]+$/g, "")
@@ -502,7 +505,7 @@ export async function POST(request: Request) {
         contextCharacters: context.text.length,
         sourceCount: context.sources.length,
       });
-      const result = streamText({
+      const result = await streamText({
         model: chatModel.model,
         system: `${SYSTEM_PROMPT}
 
@@ -523,7 +526,10 @@ ${answerPlan.guidance}`,
         ],
         temperature: 0.1,
         maxOutputTokens: answerPlan.maxOutputTokens,
-        providerOptions: chatModel.providerOptions,
+        providerOptions: withLangSmithTracing(
+          chatModel.providerOptions,
+          "rag-chat-answer",
+        ),
         experimental_transform: smoothStream({
           delayInMs: 20,
           chunking: "word",

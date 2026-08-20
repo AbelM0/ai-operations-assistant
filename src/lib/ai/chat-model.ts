@@ -2,7 +2,8 @@ import "server-only";
 
 import { openai } from "@ai-sdk/openai";
 import { deepseek } from "@ai-sdk/deepseek";
-import type { LanguageModel } from "ai";
+import { wrapEmbeddingModel, type LanguageModel } from "ai";
+import { langSmithEmbeddingMiddleware } from "@/lib/ai/sdk";
 
 type ChatModelResult = {
   model: LanguageModel;
@@ -74,7 +75,13 @@ export function getOpenAIEmbeddingModel() {
     process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
 
   return {
-    model: openai.embedding(modelId),
+    model: wrapEmbeddingModel({
+      model: openai.embedding(modelId),
+      middleware: langSmithEmbeddingMiddleware({
+        provider: "openai",
+        modelId,
+      }),
+    }),
     modelId,
     provider: "openai" as const,
   };

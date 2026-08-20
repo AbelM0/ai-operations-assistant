@@ -1,7 +1,8 @@
 import "server-only";
 
-import { generateText, jsonSchema, Output } from "ai";
+import { jsonSchema, Output } from "ai";
 import { getChatModel } from "@/lib/ai/chat-model";
+import { generateText, withLangSmithTracing } from "@/lib/ai/sdk";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeExtractionDate } from "./extraction-normalization";
 import {
@@ -280,7 +281,10 @@ export async function extractDocumentOperations(
       }),
       temperature: 0,
       maxOutputTokens: 4_000,
-      providerOptions: configured.providerOptions,
+      providerOptions: withLangSmithTracing(
+        configured.providerOptions,
+        "document-operations-extraction",
+      ),
     });
 
     const output = result.output;

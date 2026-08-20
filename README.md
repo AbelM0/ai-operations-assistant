@@ -213,6 +213,12 @@ CLERK_WEBHOOK_SECRET=whsec_...
 | `EMBEDDING_PROVIDER` | No | `local` by default or `openai` |
 | `LOCAL_EMBEDDING_MODEL` | No | Local Hugging Face feature-extraction model |
 | `OPENAI_EMBEDDING_MODEL` | No | OpenAI embedding model |
+| `LANGSMITH_TRACING` | No | Enables LangSmith tracing for server-side AI provider calls |
+| `LANGSMITH_API_KEY` | When tracing | LangSmith API key |
+| `LANGSMITH_PROJECT` | No | LangSmith project receiving traces |
+| `LANGSMITH_ENDPOINT` | No | Regional LangSmith API endpoint; defaults to US |
+| `LANGSMITH_WORKSPACE_ID` | Sometimes | Required for API keys with access to multiple workspaces |
+| `LANGSMITH_TRACING_BACKGROUND` | No | Set to `false` on serverless deployments to flush traces before shutdown |
 | `OCR_LANGUAGES` | No | Tesseract language list; defaults to `eng+amh` |
 | `RAG_MATCH_THRESHOLD` | No | Minimum vector similarity; defaults to `0.32` |
 | `RAG_MATCH_COUNT` | No | Maximum retrieved chunks; defaults to `14` |

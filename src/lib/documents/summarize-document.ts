@@ -1,7 +1,7 @@
 import "server-only";
 
-import { streamText } from "ai";
 import { getDeepSeekModel } from "@/lib/ai/chat-model";
+import { streamText, withLangSmithTracing } from "@/lib/ai/sdk";
 
 const MAX_BATCH_CHARACTERS = 280_000;
 
@@ -61,13 +61,16 @@ export async function prepareDocumentSummary(
 
   const partialSummaries: string[] = [];
   for (let index = 0; index < batches.length; index += 1) {
-    const result = streamText({
+    const result = await streamText({
       model: summaryModel.model,
       system: summarySystemPrompt,
       prompt: `This is part ${index + 1} of ${batches.length} of one document. Produce a factual intermediate summary that retains details needed for a final whole-document summary.\n${batches[index]}`,
       temperature: 0.1,
       maxOutputTokens: 7_000,
-      providerOptions: summaryModel.providerOptions,
+      providerOptions: withLangSmithTracing(
+        summaryModel.providerOptions,
+        "document-summary-part",
+      ),
       abortSignal,
     });
     const [content, usage] = await Promise.all([result.text, result.usage]);
