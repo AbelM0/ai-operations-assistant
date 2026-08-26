@@ -58,7 +58,7 @@ export function ChatMessages({
 
   if (messages.length === 0) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center py-12 sm:py-16">
+      <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-1 flex-col justify-center py-12 sm:py-16">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#2DD4BF]/20 bg-[#09100F] text-[#5EEAD4]">
           <Sparkle className="h-5 w-5" weight="fill" />
         </div>
@@ -87,11 +87,11 @@ export function ChatMessages({
   return (
     <>
       <div
-        className="mx-auto w-full max-w-3xl flex-1 py-8 sm:py-10"
+        className="mx-auto w-full min-w-0 max-w-3xl flex-1 py-8 sm:py-10"
         onPointerDownCapture={pauseAutoScroll}
         onWheelCapture={pauseAutoScroll}
       >
-        <div className="space-y-8" aria-live="polite">
+        <div className="min-w-0 space-y-8" aria-live="polite">
         {messages.map((message) => {
           const text = message.parts
             .filter((part) => part.type === "text")
@@ -116,16 +116,16 @@ export function ChatMessages({
               key={message.id}
               className={
                 message.role === "user"
-                  ? "ml-auto max-w-[88%]"
-                  : "max-w-[92%]"
+                  ? "ml-auto min-w-0 max-w-[88%]"
+                  : "min-w-0 max-w-[92%]"
               }
             >
               {message.role === "assistant" ? (
-                <div className="grid grid-cols-[2rem_1fr] gap-3">
+                <div className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] gap-3">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2DD4BF]/10 text-[#5EEAD4]">
                     <Sparkle className="h-3.5 w-3.5" weight="fill" />
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <StreamingMarkdown
                       streaming={isStreamingMessage}
                       sources={sources}
@@ -198,7 +198,7 @@ export function ChatMessages({
         })}
 
         {showResponseProgress ? (
-          <div className="grid grid-cols-[2rem_1fr] gap-3">
+          <div className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] gap-3">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2DD4BF]/10 text-[#5EEAD4]">
               <Sparkle className="h-3.5 w-3.5" weight="fill" />
             </span>

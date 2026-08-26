@@ -21,7 +21,7 @@ export function ChatWorkspace({
   } = controller;
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 sm:px-7 lg:px-10">
+    <section className="mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col px-4 sm:px-7 lg:px-10">
       <div className="flex items-center justify-between gap-4 border-b border-white/8 py-4">
         <button
           type="button"
@@ -55,7 +55,7 @@ export function ChatWorkspace({
         </button> */}
       </div>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <ChatMessages
           key={conversationId ?? "new-conversation"}
           controller={controller}

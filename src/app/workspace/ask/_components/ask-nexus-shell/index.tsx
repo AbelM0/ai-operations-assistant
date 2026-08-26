@@ -56,8 +56,8 @@ export function AskNexusShell(props: AskNexusShellProps) {
     <>
       <WorkspaceSidebar>{nav}</WorkspaceSidebar>
 
-      <SidebarInset className="min-h-dvh bg-[#050505]">
-        <div className="nexus-page relative flex min-h-dvh flex-col bg-[#050505] text-white">
+      <SidebarInset className="min-h-dvh min-w-0 bg-[#050505]">
+        <div className="nexus-page relative flex min-h-dvh min-w-0 flex-col bg-[#050505] text-white">
           <div className="nexus-workspace-grid pointer-events-none fixed inset-0 opacity-30" />
 
         <header className="sticky top-0 z-20 flex h-17 items-center justify-between border-b border-white/8 bg-[#050505]/88 px-4 backdrop-blur-xl sm:px-7 lg:px-10">
